@@ -75,6 +75,7 @@ class MyStrat(Strategy):
     def next(self):
         """
         Descripcion: recorre cada fila una a una, evalua el criterio y decide Buy/Sell en el siguente paso
+        Va a recorreer row by row los Indicadores declarados en el metodo I en el init(()) de la clase.
             
         """         
         super().next()
