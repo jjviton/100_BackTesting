@@ -28,6 +28,8 @@ fechaFin_ = dt.datetime.today()  - dt.timedelta(days=1)
 
 myLSTMnet_6D = lstm.LSTMClass(6)          #Creamos la clase
 df_signal= myLSTMnet_6D.estrategia_LSTM_01( tickers_ibex[6], fechaInicio_, fechaFin_)
+########################################################
+
 
 ## Guardo en HD el fichero de señales, para evitar perder tiempo con las redes neuronales
 df_signal['signal'].to_csv("../temp/datos.csv", index=False)
@@ -77,7 +79,7 @@ class MyStrat(Strategy):
     """       
     
     
-    mysize = 0.5
+    mysize = 0.5  #creo que cuando compra, invierte la mitad de lo que tenemos
     def init(self):
         """
         Descripcion: Hereda del Init de la Clase. Se ejecuta una vez a la creacion de la clase
@@ -116,16 +118,25 @@ class MyStrat(Strategy):
 
 
 #Ejecutamos la strategia
-bt = Backtest(dfpl[-200:], MyStrat, cash=100, margin=1/1, commission=.000)   ## data ; strategy ; initial Cash; 
+bt = Backtest(dfpl[-200:], MyStrat, cash=100, commission=.001)   ## data ; strategy ; initial Cash; 
 stat = bt.run()
 print(stat)
-
 
 
 backtesting.set_bokeh_output(notebook=False)
 bt.plot(show_legend=True, plot_width=None, plot_equity=True, plot_return=False, 
 plot_pl=True, plot_volume=True, plot_drawdown=False, smooth_equity=False, relative_equity=True, 
 superimpose=True, resample=False, reverse_indicators=False, open_browser=True)
+
+
+#salvo informacion en html
+df = stat.to_frame()
+html = df.to_html()
+with open("df.html", "w") as file:
+    file.write(html)
+import webbrowser
+
+webbrowser.open("df.html")    
 
 
 
