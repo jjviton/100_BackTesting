@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+#https://kernc.github.io/backtesting.py/
+
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -25,9 +27,10 @@ lstm = importlib.import_module("LSTM", "C:/Users/INNOVACION/Documents/J3/100.- c
 # Determino las fechas
 fechaInicio_ = dt.datetime(2018,1,10)
 fechaFin_ = dt.datetime.today()  - dt.timedelta(days=1)    
+instrumento_ =tickers_ibex[16]
 
 myLSTMnet_6D = lstm.LSTMClass(6)          #Creamos la clase
-df_signal= myLSTMnet_6D.estrategia_LSTM_01( tickers_ibex[6], fechaInicio_, fechaFin_)
+df_signal= myLSTMnet_6D.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
 ########################################################
 
 
@@ -47,7 +50,7 @@ grid
 
 #dfpl = myLSTMnet_6D.dfx[:].copy() No me vale porque he quitado valores para que trabaje mejor la red
 
-dfpl = yf.download(tickers_ibex[1], fechaInicio_,fechaFin_)
+dfpl = yf.download(instrumento_, fechaInicio_,fechaFin_)
 
 dfpl['signal']=1
 dfpl["signal"].iloc[-200:]=df_signal['signal'].iloc[:].copy()
@@ -126,21 +129,22 @@ print(stat)
 backtesting.set_bokeh_output(notebook=False)
 bt.plot(show_legend=True, plot_width=None, plot_equity=True, plot_return=False, 
 plot_pl=True, plot_volume=True, plot_drawdown=False, smooth_equity=False, relative_equity=True, 
-superimpose=True, resample=False, reverse_indicators=False, open_browser=True)
+superimpose=True, resample=False, reverse_indicators=False, open_browser=True,
+filename=("graph_"+instrumento_+".html"))
 
 
-#salvo informacion en html
+#Salvo informacion Estadistica en html
 df = stat.to_frame()
 html = df.to_html()
-with open("df.html", "w") as file:
+with open("stat_"+instrumento_+".html", "w") as file:
     file.write(html)
 import webbrowser
+webbrowser.open("stat_"+instrumento_+".html")    
 
-webbrowser.open("df.html")    
+
 
 
 
 print(stat._trades)
-
 print('This is it................ 7')
 
