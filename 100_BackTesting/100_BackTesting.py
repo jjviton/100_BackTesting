@@ -22,46 +22,68 @@ from ibex import tickers_ibex
 lstm = importlib.import_module("LSTM", "C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM/")
 
 
+from backtesting.test import SMA, GOOG
+
+
+
 
 #################### PROBAMOS LA ESTRATEGIA
 # Determino las fechas
 fechaInicio_ = dt.datetime(2018,1,10)
 fechaFin_ = dt.datetime.today()  - dt.timedelta(days=1)    
-instrumento_ =tickers_ibex[16]
+instrumento_ =tickers_ibex[4]
+
+# Para desarollo lo cojo de ficherop
+
 
 myLSTMnet_6D = lstm.LSTMClass(6)          #Creamos la clase
-df_signal= myLSTMnet_6D.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
+df_signal, df_predi= myLSTMnet_6D.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
 ########################################################
 
 
-## Guardo en HD el fichero de señales, para evitar perder tiempo con las redes neuronales
-df_signal['signal'].to_csv("../temp/datos.csv", index=False)
-df_signal2 = pd.read_csv("../temp/datos.csv")
-
-
-grid_distance = 0.005
-TPSL_Ratio = 1
-midprice = 1.065
-def generate_grid(midprice, grid_distance, grid_range):
-    return (np.arange(midprice-grid_range, midprice+grid_range, grid_distance))
-
-grid = generate_grid(midprice=midprice, grid_distance=grid_distance, grid_range=0.1)
-grid
-
-#dfpl = myLSTMnet_6D.dfx[:].copy() No me vale porque he quitado valores para que trabaje mejor la red
+dfpl_a = myLSTMnet_6D.dfx[:].copy() #No me vale porque he quitado valores para que trabaje mejor la red
 
 dfpl = yf.download(instrumento_, fechaInicio_,fechaFin_)
 
 dfpl['signal']=1
 dfpl["signal"].iloc[-200:]=df_signal['signal'].iloc[:].copy()
+dfpl['predi']=1
+df_predi.fillna(0, inplace=True)
+dfpl["predi"].iloc[-200:]=df_predi['X_dias'].iloc[:int(-6)].copy() 
+dfpl['hull']=1
+dfpl["hull"].iloc[-200:]=dfpl_a['hull'].iloc[-200:]
+
+
+dfpl['predi'] = dfpl['predi'].str.replace('[', '').str.replace(']', '')
+dfpl['predi'] = pd.to_numeric(dfpl['predi'], errors='coerce')
+ 
+
+#Backa a disco para agilizar el desarrollo
+## Guardo en HD el fichero de señales, para evitar perder tiempo con las redes neuronales
+dfpl.to_csv("../temp/datos2.csv", index=True)
+#borro el dataframe
+del dfpl
+
+dfpl = pd.read_csv("../temp/datos2.csv",dtype={'predi': float})
 
 #dfpl = df_signal[:].copy()
+#CREO MIS INDICADORES
 def SIGNAL():
     return dfpl.signal[-200:]
+def HULL():
+    dfpl['hull'].iloc[-200:-194]=dfpl['hull'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+    return dfpl.hull[-200:]
+def PREDI(): 
+    dfpl['predi'].iloc[-200:-194]=dfpl['predi'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+    return dfpl.predi[-200:]
+
 dfpl['ATR'] = ta.atr(high = dfpl.High, low = dfpl.Low, close = dfpl.Close, length = 16)
 dfpl.dropna(inplace=True)
 
-myLSTMnet_6D.dfx
+
+TPSL_Ratio = 1
+
+#myLSTMnet_6D.dfx
 
 
 from backtesting import Strategy
@@ -93,7 +115,10 @@ class MyStrat(Strategy):
         super().init()
         self.signal1 = self.I(SIGNAL) 
         #self.rsi= self.I(talib.RSI, self.data.close, 14)  # llama a la fucnion RSI con los parametros
-        #self.sma1 =self.I(SMA,close, seld.n1)
+        self.predi= self.I(PREDI,overlay=True)
+        self.hull= self.I(HULL,overlay=True)
+        
+        self.contador=0
         
         
 
@@ -104,24 +129,27 @@ class MyStrat(Strategy):
             
         """         
         super().next()
+        self.contador +=1
         
         slatr = self.data.ATR[-1] #grid_distance
         TPSLRatio = 1.2*TPSL_Ratio
         
         ## Logia de la estrategia
         if self.signal1==1: #and len(self.trades)<=2:   
-            sl1 = self.data.Close[-1] - slatr
-            tp1 = self.data.Close[-1] + slatr*TPSLRatio
+            """
+            sl1 = self.data.Close[-1] - 2*slatr
+            tp1 = self.data.Close[-1] + 2*slatr*TPSLRatio            
             self.buy(sl=sl1, tp=tp1, size=self.mysize)
+            """
+            self.buy()
+            
+        elif (self.data.hull[-1] < self.data.hull[-2] ):  #El dataframe que no se incluye en llamada a run() nos eincrementan
+        #else:
+            self.position.close()
             
 
-            #sl1 = self.data.Close[-1] + slatr
-            #tp1 = self.data.Close[-1] - slatr*TPSLRatio
-            #self.sell(sl=sl1, tp=tp1, size=self.mysize)
-
-
 #Ejecutamos la strategia
-bt = Backtest(dfpl[-200:], MyStrat, cash=100, commission=.001)   ## data ; strategy ; initial Cash; 
+bt = Backtest(dfpl[-200:], MyStrat, cash=100, commission=.001)   ## , exclusive_orders=True data ; strategy ; initial Cash; 
 stat = bt.run()
 print(stat)
 
@@ -134,13 +162,14 @@ filename=("graph_"+instrumento_+".html"))
 
 
 #Salvo informacion Estadistica en html
+""" Comento para ir rapido en DEG
 df = stat.to_frame()
 html = df.to_html()
 with open("stat_"+instrumento_+".html", "w") as file:
     file.write(html)
 import webbrowser
 webbrowser.open("stat_"+instrumento_+".html")    
-
+"""
 
 
 
