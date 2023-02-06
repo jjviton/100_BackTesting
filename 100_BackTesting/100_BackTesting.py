@@ -31,13 +31,13 @@ from backtesting.test import SMA, GOOG
 # Determino las fechas
 fechaInicio_ = dt.datetime(2018,1,10)
 fechaFin_ = dt.datetime.today()  - dt.timedelta(days=1)    
-instrumento_ =tickers_ibex[4]
+instrumento_ =tickers_ibex[7]
 
 # Para desarollo lo cojo de ficherop
 
 
 myLSTMnet_6D = lstm.LSTMClass(6)          #Creamos la clase
-df_signal, df_predi= myLSTMnet_6D.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
+df_signal, predi= myLSTMnet_6D.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
 ########################################################
 
 
@@ -46,23 +46,23 @@ dfpl_a = myLSTMnet_6D.dfx[:].copy() #No me vale porque he quitado valores para q
 dfpl = yf.download(instrumento_, fechaInicio_,fechaFin_)
 
 dfpl['signal']=1
-dfpl["signal"].iloc[-200:]=df_signal['signal'].iloc[:].copy()
+dfpl["signal"].iloc[-200:]=df_signal['signal'].iloc[-200:].copy()
 dfpl['predi']=1
+df_predi = pd.DataFrame(predi, columns=['X_dias'])
 df_predi.fillna(0, inplace=True)
-dfpl["predi"].iloc[-200:]=df_predi['X_dias'].iloc[:int(-6)].copy() 
+dfpl["predi"].iloc[-200:]=df_predi['X_dias'].iloc[-200:].copy()
 dfpl['hull']=1
 dfpl["hull"].iloc[-200:]=dfpl_a['hull'].iloc[-200:]
 
 
-dfpl['predi'] = dfpl['predi'].str.replace('[', '').str.replace(']', '')
-dfpl['predi'] = pd.to_numeric(dfpl['predi'], errors='coerce')
- 
 
 #Backa a disco para agilizar el desarrollo
 ## Guardo en HD el fichero de señales, para evitar perder tiempo con las redes neuronales
 dfpl.to_csv("../temp/datos2.csv", index=True)
 #borro el dataframe
 del dfpl
+
+
 
 dfpl = pd.read_csv("../temp/datos2.csv",dtype={'predi': float})
 
@@ -97,6 +97,9 @@ class MyStrat(Strategy):
     """Clase que manejando la estrategia recoge el dataFrame comprando y vendiendo
     https://kernc.github.io/backtesting.py/
     https://www.youtube.com/watch?v=e4ytbIm2Xg0&ab_channel=ChadThackray
+    
+    Notas: el dataFrame 'predi' de predicciones no se ajusta. Hoy me dice la predcicion
+    a n_future days.
         
     Parámetros:
     a -- 
@@ -143,13 +146,13 @@ class MyStrat(Strategy):
             """
             self.buy()
             
-        elif (self.data.hull[-1] < self.data.hull[-2] ):  #El dataframe que no se incluye en llamada a run() nos eincrementan
-        #else:
+        if (self.data.hull[-1] < self.data.hull[-2] ):  #El dataframe que no se incluye en llamada a run() nos eincrementan
             self.position.close()
-            
+        if(self.data.Close[-1] < 2*slatr):  #StopLoss    
+            self.position.close()   
 
 #Ejecutamos la strategia
-bt = Backtest(dfpl[-200:], MyStrat, cash=100, commission=.001)   ## , exclusive_orders=True data ; strategy ; initial Cash; 
+bt = Backtest(dfpl[-200:], MyStrat, cash=100000, commission=.001)   ## , exclusive_orders=True data ; strategy ; initial Cash; 
 stat = bt.run()
 print(stat)
 
