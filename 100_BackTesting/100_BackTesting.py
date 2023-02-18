@@ -68,6 +68,7 @@ class MyStrat(Strategy):
         self.predi= self.I(PREDI,overlay=True)
         self.predi= self.I(PREDI_DES,overlay=True)
         self.hull= self.I(HULL,overlay=True)
+        self.Cclose= self.I(CLOSE_Original,overlay=True)
         
         self.contador=0
         
@@ -118,9 +119,9 @@ if __name__ == '__main__':
     #
     
     
-    for jjj in range(0,len(tickers_ibex)): 
+    for jjj in range(0,len(tickers_eurostoxx)): 
         
-        instrumento_ =tickers_ibex[jjj]
+        instrumento_ =tickers_eurostoxx[jjj]
         myLSTMnet_6D = lstm.LSTMClass(dias_a_futuro)          #Creamos la clase
         df_signal, predi, prediDesplazado = myLSTMnet_6D.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
         ########################################################
@@ -147,16 +148,23 @@ if __name__ == '__main__':
         dfpl['hull']=1
         dfpl["hull"].iloc[-200:]=dfpl_a['hull'].iloc[-200:]
         
+        #Me traigo unos datos del dataFrame originial de la clase LSTM
+        
+        dfpl['Cclose']=1
+        dfpl["Cclose"].iloc[-200:]=myLSTMnet_6D.dfx['Close'].iloc[-200:]
+        
+        
         
         
         #Backa a disco para agilizar el desarrollo
         ## Guardo en HD el fichero de señales, para evitar perder tiempo con las redes neuronales
-        dfpl.to_csv("../temp/datos2.csv", index=True)
+        ## Ojo que este paso a csv quieta el date indes y luego no sale la fecha en el graph
+        #############dfpl.to_csv("../temp/datos2.csv", index=True)
         #borro el dataframe
-        del dfpl
+        #############del dfpl
 
         
-        dfpl = pd.read_csv("../temp/datos2.csv",dtype={'predi': float})
+        #############dfpl = pd.read_csv("../temp/datos2.csv",dtype={'predi': float})
         
         #dfpl = df_signal[:].copy()
         #CREO MIS INDICADORES
@@ -171,6 +179,9 @@ if __name__ == '__main__':
         def PREDI_DES(): 
             dfpl['prediDesplazado'].iloc[-200:-194]=dfpl['prediDesplazado'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
             return dfpl.prediDesplazado[-200:]
+        def CLOSE_Original(): 
+            dfpl['Cclose'].iloc[-200:-194]=dfpl['Cclose'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+            return dfpl.Cclose[-200:]
         
         dfpl['ATR'] = ta.atr(high = dfpl.High, low = dfpl.Low, close = dfpl.Close, length = 16)
         dfpl.dropna(inplace=True)
