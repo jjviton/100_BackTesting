@@ -1,6 +1,8 @@
 #  Mis ignores J3viton
 
 *.pdf
+*.html
+*.zip
 
 
 # Byte-compiled / optimized / DLL files
