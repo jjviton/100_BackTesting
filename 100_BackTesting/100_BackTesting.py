@@ -115,98 +115,114 @@ if __name__ == '__main__':
     # Determino las fechas
     fechaInicio_ = dt.datetime(2018,1,10)
     fechaFin_ = dt.datetime.today()  - dt.timedelta(days=1)    
-    dias_a_futuro =6
-    #
+    #dias_a_futuro = 2
     
+    for dias_a_futuro in range(2, 20):
     
-    for jjj in range(0,len(tickers_eurostoxx)): 
-        
-        instrumento_ =tickers_eurostoxx[jjj]
-        myLSTMnet_6D = lstm.LSTMClass(dias_a_futuro)          #Creamos la clase
-        df_signal, predi, prediDesplazado = myLSTMnet_6D.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
-        ########################################################
-        
-        
-        dfpl_a = myLSTMnet_6D.dfx[:].copy() #No me vale porque he quitado valores para que trabaje mejor la red
-        
-        dfpl = yf.download(instrumento_, fechaInicio_,fechaFin_)
-        
-        dfpl['signal']=1
-        dfpl["signal"].iloc[-200:]=df_signal['signal'].iloc[-200:].copy()
-        dfpl['predi']=1
-        dfpl['prediDesplazado']=1
-        
-        df_predi = pd.DataFrame(predi, columns=['X_dias'])
-        df_predi.fillna(0, inplace=True)
-        
-        df_prediDesplazado = pd.DataFrame(prediDesplazado, columns=['X_dias'])
-        df_prediDesplazado.fillna(0, inplace=True)        
-        
-        dfpl["predi"].iloc[-200:]=df_predi['X_dias'].iloc[-200:].copy()
-        dfpl["prediDesplazado"].iloc[-200:]=df_prediDesplazado['X_dias'].iloc[-200-dias_a_futuro:-dias_a_futuro].copy()
-        
-        dfpl['hull']=1
-        dfpl["hull"].iloc[-200:]=dfpl_a['hull'].iloc[-200:]
-        
-        #Me traigo unos datos del dataFrame originial de la clase LSTM
-        
-        dfpl['Cclose']=1
-        dfpl["Cclose"].iloc[-200:]=myLSTMnet_6D.dfx['Close'].iloc[-200:]
-        
-        
-        
-        
-        #Backa a disco para agilizar el desarrollo
-        ## Guardo en HD el fichero de señales, para evitar perder tiempo con las redes neuronales
-        ## Ojo que este paso a csv quieta el date indes y luego no sale la fecha en el graph
-        #############dfpl.to_csv("../temp/datos2.csv", index=True)
-        #borro el dataframe
-        #############del dfpl
-
-        
-        #############dfpl = pd.read_csv("../temp/datos2.csv",dtype={'predi': float})
-        
-        #dfpl = df_signal[:].copy()
-        #CREO MIS INDICADORES
-        def SIGNAL():
-            return dfpl.signal[-200:]
-        def HULL():
-            dfpl['hull'].iloc[-200:-194]=dfpl['hull'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
-            return dfpl.hull[-200:]
-        def PREDI(): 
-            dfpl['predi'].iloc[-200:-194]=dfpl['predi'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
-            return dfpl.predi[-200:]
-        def PREDI_DES(): 
-            dfpl['prediDesplazado'].iloc[-200:-194]=dfpl['prediDesplazado'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
-            return dfpl.prediDesplazado[-200:]
-        def CLOSE_Original(): 
-            dfpl['Cclose'].iloc[-200:-194]=dfpl['Cclose'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
-            return dfpl.Cclose[-200:]
-        
-        dfpl['ATR'] = ta.atr(high = dfpl.High, low = dfpl.Low, close = dfpl.Close, length = 16)
-        dfpl.dropna(inplace=True)
-        
-        #Ejecutamos la strategia
-        bt = Backtest(dfpl[-200:], MyStrat, cash=100000, commission=.001)   ## , exclusive_orders=True data ; strategy ; initial Cash; 
-        stat = bt.run()
-        print(stat)
-        
-        backtesting.set_bokeh_output(notebook=False)
-        bt.plot(show_legend=True, plot_width=None, plot_equity=True, plot_return=False, 
-        plot_pl=True, plot_volume=True, plot_drawdown=False, smooth_equity=False, relative_equity=True, 
-        superimpose=True, resample=False, reverse_indicators=False, open_browser=True,
-        filename=("../reports/temp/graph_6d_"+instrumento_+".html"))
-        
-        
-        #Salvo informacion Estadistica en html
-        """ Comento para ir rapido en DEG
-        df = stat.to_frame()
-        html = df.to_html()
-        with open("../reports/temp/stat_"+instrumento_+".html", "w") as file:
-            file.write(html)
-        import webbrowser
-        webbrowser.open("../reports/temp/stat_"+instrumento_+".html")    
-        """    
+        for jjj in range(0,len(tickers_eurostoxx)): 
+            
+            instrumento_ =tickers_eurostoxx[jjj]
+            myLSTMnet_6D = lstm.LSTMClass(dias_a_futuro)          #Creamos la clase
+            df_signal, predi, prediDesplazado = myLSTMnet_6D.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
+            ########################################################
+            
+            
+            dfpl_a = myLSTMnet_6D.dfx[:].copy() #No me vale porque he quitado valores para que trabaje mejor la red
+            
+            dfpl = yf.download(instrumento_, fechaInicio_,fechaFin_)
+            
+            dfpl['signal']=1
+            dfpl["signal"].iloc[-200:]=df_signal['signal'].iloc[-200:].copy()
+            dfpl['predi']=1
+            dfpl['prediDesplazado']=1
+            
+            df_predi = pd.DataFrame(predi, columns=['X_dias'])
+            df_predi.fillna(0, inplace=True)
+            
+            df_prediDesplazado = pd.DataFrame(prediDesplazado, columns=['X_dias'])
+            df_prediDesplazado.fillna(0, inplace=True)        
+            
+            dfpl["predi"].iloc[-200:]=df_predi['X_dias'].iloc[-200:].copy()
+            dfpl["prediDesplazado"].iloc[-200:]=df_prediDesplazado['X_dias'].iloc[-200-dias_a_futuro:-dias_a_futuro].copy()
+            
+            dfpl['hull']=1
+            dfpl["hull"].iloc[-200:]=dfpl_a['hull'].iloc[-200:]
+            
+            #Me traigo unos datos del dataFrame originial de la clase LSTM
+            
+            dfpl['Cclose']=1
+            dfpl["Cclose"].iloc[-200:]=myLSTMnet_6D.dfx['Close'].iloc[-200:]
+            
+            
+            
+            
+            #Backa a disco para agilizar el desarrollo
+            ## Guardo en HD el fichero de señales, para evitar perder tiempo con las redes neuronales
+            ## Ojo que este paso a csv quieta el date indes y luego no sale la fecha en el graph
+            #############dfpl.to_csv("../temp/datos2.csv", index=True)
+            #borro el dataframe
+            #############del dfpl
+    
+            
+            #############dfpl = pd.read_csv("../temp/datos2.csv",dtype={'predi': float})
+            
+            #dfpl = df_signal[:].copy()
+            #CREO MIS INDICADORES
+            def SIGNAL():
+                return dfpl.signal[-200:]
+            def HULL():
+                dfpl['hull'].iloc[-200:-194]=dfpl['hull'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+                return dfpl.hull[-200:]
+            def PREDI(): 
+                dfpl['predi'].iloc[-200:-194]=dfpl['predi'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+                return dfpl.predi[-200:]
+            def PREDI_DES(): 
+                dfpl['prediDesplazado'].iloc[-200:-194]=dfpl['prediDesplazado'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+                return dfpl.prediDesplazado[-200:]
+            def CLOSE_Original(): 
+                dfpl['Cclose'].iloc[-200:-194]=dfpl['Cclose'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+                return dfpl.Cclose[-200:]
+            
+            dfpl['ATR'] = ta.atr(high = dfpl.High, low = dfpl.Low, close = dfpl.Close, length = 16)
+            dfpl.dropna(inplace=True)
+            
+            #Ejecutamos la strategia
+            bt = Backtest(dfpl[-200:], MyStrat, cash=100000, commission=.001)   ## , exclusive_orders=True data ; strategy ; initial Cash; 
+            stat = bt.run()
+            print(stat)
+            
+            backtesting.set_bokeh_output(notebook=False)
+            bt.plot(show_legend=True, plot_width=None, plot_equity=True, plot_return=False, 
+            plot_pl=True, plot_volume=True, plot_drawdown=False, smooth_equity=False, relative_equity=True, 
+            superimpose=True, resample=False, reverse_indicators=False, open_browser=True,
+            filename=("../reports/temp/graph_6d_"+instrumento_+".html"))
+            
+            
+            #Salvo informacion Estadistica en html
+            
+            df_new = stat.to_frame()
+            
+            file_path ="../reports/temp/"+instrumento_+".xlsx"
+            try:
+                df_existing = pd.read_excel(file_path)
+                
+                with pd.ExcelWriter(file_path, engine='openpyxl', mode='a') as writer:
+                        # agregar el nuevo DataFrame a una nueva hoja 
+                        df_new.to_excel(writer, sheet_name=str(dias_a_futuro), index=False)
+    
+            except:             #La primera ronda no existe el fichero
+                df_new.to_excel(file_path, 
+                     index=False,
+                     sheet_name=str(dias_a_futuro))
+            
+            #Convertimos a html
+            """
+            html = df.to_html()
+            with open("../reports/temp/stat_"+instrumento_+".html", "w") as file:
+                file.write(html)
+            import webbrowser
+            webbrowser.open("../reports/temp/stat_"+instrumento_+".html")    
+            """    
     
     print(stat._trades)
     print('This is it................ 7')
