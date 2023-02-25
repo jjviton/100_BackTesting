@@ -30,7 +30,7 @@ from backtesting.test import SMA, GOOG
 
 TPSL_Ratio = 1
 
-#myLSTMnet_6D.dfx
+#myLSTMnet_4D_hull.dfx
 
 
 from backtesting import Strategy
@@ -44,6 +44,10 @@ class MyStrat(Strategy):
     """Clase que manejando la estrategia recoge el dataFrame comprando y vendiendo
     https://kernc.github.io/backtesting.py/
     https://www.youtube.com/watch?v=e4ytbIm2Xg0&ab_channel=ChadThackray
+    Documentacion:
+        https://www.learningmarkets.com/determining-expectancy-in-your-trading/#:~:text=What%20is%20expectancy%3F,and%20helps%20validate%20your%20backtesting.
+        https://strategyquant.com/forum/topic/382-backtesting-guide/?ref=njt&utm_source=google&utm_medium=cpc&utm_campaign=nonus&gclid=CjwKCAiA0cyfBhBREiwAAtStHH1SlCp1KCf7jPKhgRa0b443EgFtt0KElG_Yn4FBss_l6R6oM78QaRoCsDkQAvD_BwE#:~:text=File%3A%20BackTestingReportBaseline.pdf
+    
     
     Notas: el dataFrame 'predi' de predicciones no se ajusta. Hoy me dice la predcicion
     a n_future days.
@@ -113,21 +117,30 @@ if __name__ == '__main__':
     
     #################### PROBAMOS LA ESTRATEGIA
     # Determino las fechas
-    fechaInicio_ = dt.datetime(2018,1,10)
-    fechaFin_ = dt.datetime.today()  - dt.timedelta(days=1)    
+    fechaInicio_ = dt.datetime(2005,1,10)
+    fechaFin_ = dt.datetime(2023,2,21)   #dt.datetime.today()  - dt.timedelta(days=1)    
     #dias_a_futuro = 2
     
-    for dias_a_futuro in range(2, 20):
+    for dias_a_futuro in [4]:   #Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
     
-        for jjj in range(0,len(tickers_eurostoxx)): 
+        for jjj in range(0,len(tickers_eurostoxx )): 
             
-            instrumento_ =tickers_eurostoxx[jjj]
-            myLSTMnet_6D = lstm.LSTMClass(dias_a_futuro)          #Creamos la clase
-            df_signal, predi, prediDesplazado = myLSTMnet_6D.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
+            instrumento_ =tickers_eurostoxx [jjj]
+            
+            ########################### dos prediciones HULL and CLOSE
+            myLSTMnet_4D_hull = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'hull')          #Creamos la clase
+            df_signal_hull, predi, prediDesplazado = myLSTMnet_4D_hull.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
+            
+            myLSTMnet_4D_Close = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'Close')          #Creamos la clase
+            df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
+            
+            df_signal=df_signal_hull['signal'] & df_signal_Close['signal']   #uno las señales
+            df_signal=df_signal.to_frame()
+            
             ########################################################
             
             
-            dfpl_a = myLSTMnet_6D.dfx[:].copy() #No me vale porque he quitado valores para que trabaje mejor la red
+            dfpl_a = myLSTMnet_4D_hull.dfx[:].copy() #No me vale porque he quitado valores para que trabaje mejor la red
             
             dfpl = yf.download(instrumento_, fechaInicio_,fechaFin_)
             
@@ -151,7 +164,7 @@ if __name__ == '__main__':
             #Me traigo unos datos del dataFrame originial de la clase LSTM
             
             dfpl['Cclose']=1
-            dfpl["Cclose"].iloc[-200:]=myLSTMnet_6D.dfx['Close'].iloc[-200:]
+            dfpl["Cclose"].iloc[-200:]=myLSTMnet_4D_hull.dfx['Close'].iloc[-200:]
             
             
             
@@ -181,6 +194,7 @@ if __name__ == '__main__':
                 return dfpl.prediDesplazado[-200:]
             def CLOSE_Original(): 
                 dfpl['Cclose'].iloc[-200:-194]=dfpl['Cclose'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+                
                 return dfpl.Cclose[-200:]
             
             dfpl['ATR'] = ta.atr(high = dfpl.High, low = dfpl.Low, close = dfpl.Close, length = 16)
@@ -195,7 +209,7 @@ if __name__ == '__main__':
             bt.plot(show_legend=True, plot_width=None, plot_equity=True, plot_return=False, 
             plot_pl=True, plot_volume=True, plot_drawdown=False, smooth_equity=False, relative_equity=True, 
             superimpose=True, resample=False, reverse_indicators=False, open_browser=True,
-            filename=("../reports/temp/graph_6d_"+instrumento_+".html"))
+            filename=("../reports/temp/graph_"+str(dias_a_futuro)+"d_"+instrumento_+".html"))
             
             
             #Salvo informacion Estadistica en html
@@ -204,16 +218,23 @@ if __name__ == '__main__':
             
             file_path ="../reports/temp/"+instrumento_+".xlsx"
             try:
-                df_existing = pd.read_excel(file_path)
+                df_existing = pd.DataFrame()  #columns=[dias_a_futuro])
+                df_existing= pd.read_excel(file_path, index_col=0)
                 
+                """
                 with pd.ExcelWriter(file_path, engine='openpyxl', mode='a') as writer:
                         # agregar el nuevo DataFrame a una nueva hoja 
                         df_new.to_excel(writer, sheet_name=str(dias_a_futuro), index=False)
-    
+                """
+                df4= pd.concat([df_existing, df_new], axis=1)
+                df4.to_excel(file_path, 
+                     index=True,
+                     )
+                
             except:             #La primera ronda no existe el fichero
                 df_new.to_excel(file_path, 
-                     index=False,
-                     sheet_name=str(dias_a_futuro))
+                     index=True,
+                     )  #sheet_name=str(dias_a_futuro)
             
             #Convertimos a html
             """
