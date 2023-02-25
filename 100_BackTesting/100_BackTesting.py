@@ -123,9 +123,9 @@ if __name__ == '__main__':
     
     for dias_a_futuro in [4]:   #Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
     
-        for jjj in range(0,len(tickers_eurostoxx )): 
+        for jjj in range(0,len(tickers_ibex )): 
             
-            instrumento_ =tickers_eurostoxx [jjj]
+            instrumento_ =tickers_ibex[jjj]
             
             ########################### dos prediciones HULL and CLOSE
             myLSTMnet_4D_hull = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'hull')          #Creamos la clase
@@ -209,7 +209,7 @@ if __name__ == '__main__':
             bt.plot(show_legend=True, plot_width=None, plot_equity=True, plot_return=False, 
             plot_pl=True, plot_volume=True, plot_drawdown=False, smooth_equity=False, relative_equity=True, 
             superimpose=True, resample=False, reverse_indicators=False, open_browser=True,
-            filename=("../reports/temp/graph_"+str(dias_a_futuro)+"d_"+instrumento_+".html"))
+            filename=("../reports/temp/"+instrumento_+"_"+str(dias_a_futuro)+"d_"+".html"))
             
             
             #Salvo informacion Estadistica en html
