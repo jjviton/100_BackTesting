@@ -123,11 +123,11 @@ if __name__ == '__main__':
     
     for dias_a_futuro in [4]:   #Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
     
-        for jjj in range(0,len(tickers_ibex )): 
+        for jjj in range(0,len(tickers_eurostoxx )): 
             
-            instrumento_ =tickers_ibex[jjj]
+            instrumento_ =tickers_eurostoxx[jjj]
             
-            ########################### dos prediciones HULL and CLOSE
+            ########################### DOS prediciones HULL and CLOSE
             myLSTMnet_4D_hull = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'hull')          #Creamos la clase
             df_signal_hull, predi, prediDesplazado = myLSTMnet_4D_hull.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
             
@@ -136,6 +136,9 @@ if __name__ == '__main__':
             
             df_signal=df_signal_hull['signal'] & df_signal_Close['signal']   #uno las señales
             df_signal=df_signal.to_frame()
+            #Finalmente solo aplicamos la estrategia close
+            #df_signal= df_signal_Close
+            
             
             ########################################################
             
