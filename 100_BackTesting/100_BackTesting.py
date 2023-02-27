@@ -118,32 +118,33 @@ if __name__ == '__main__':
     #################### PROBAMOS LA ESTRATEGIA
     # Determino las fechas
     fechaInicio_ = dt.datetime(2005,1,10)
-    fechaFin_ = dt.datetime(2023,2,21)   #dt.datetime.today()  - dt.timedelta(days=1)    
+    fechaFin_ = dt.datetime.today()  #- dt.timedelta(days=1)    #dt.datetime(2023,2,21)
     #dias_a_futuro = 2
+    tickers= tickers_eurostoxx+tickers_ibex
     
     for dias_a_futuro in [4]:   #Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
     
-        for jjj in range(0,len(tickers_eurostoxx )): 
+        for jjj in range(0,len(tickers )): 
             
-            instrumento_ =tickers_eurostoxx[jjj]
+            instrumento_ =tickers[jjj]
             
-            ########################### DOS prediciones HULL and CLOSE
-            myLSTMnet_4D_hull = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'hull')          #Creamos la clase
-            df_signal_hull, predi, prediDesplazado = myLSTMnet_4D_hull.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
+            ########################### UNA prediciones HULL and CLOSE
+            #myLSTMnet_4D_hull = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'hull')          #Creamos la clase
+            #df_signal_hull, predi, prediDesplazado = myLSTMnet_4D_hull.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
             
             myLSTMnet_4D_Close = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'Close')          #Creamos la clase
             df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
             
-            df_signal=df_signal_hull['signal'] & df_signal_Close['signal']   #uno las señales
-            df_signal=df_signal.to_frame()
+            #df_signal=df_signal_hull['signal'] & df_signal_Close['signal']   #uno las señales
+            #df_signal=df_signal.to_frame()
             #Finalmente solo aplicamos la estrategia close
-            #df_signal= df_signal_Close
+            df_signal= df_signal_Close
             
             
             ########################################################
             
             
-            dfpl_a = myLSTMnet_4D_hull.dfx[:].copy() #No me vale porque he quitado valores para que trabaje mejor la red
+            dfpl_a = myLSTMnet_4D_Close.dfx[:].copy() #No me vale porque he quitado valores para que trabaje mejor la red
             
             dfpl = yf.download(instrumento_, fechaInicio_,fechaFin_)
             
@@ -167,7 +168,7 @@ if __name__ == '__main__':
             #Me traigo unos datos del dataFrame originial de la clase LSTM
             
             dfpl['Cclose']=1
-            dfpl["Cclose"].iloc[-200:]=myLSTMnet_4D_hull.dfx['Close'].iloc[-200:]
+            dfpl["Cclose"].iloc[-200:]=myLSTMnet_4D_Close.dfx['Close'].iloc[-200:]
             
             
             
@@ -211,11 +212,11 @@ if __name__ == '__main__':
             backtesting.set_bokeh_output(notebook=False)
             bt.plot(show_legend=True, plot_width=None, plot_equity=True, plot_return=False, 
             plot_pl=True, plot_volume=True, plot_drawdown=False, smooth_equity=False, relative_equity=True, 
-            superimpose=True, resample=False, reverse_indicators=False, open_browser=True,
+            superimpose=True, resample=False, reverse_indicators=False, open_browser=False,
             filename=("../reports/temp/"+instrumento_+"_"+str(dias_a_futuro)+"d_"+".html"))
             
             
-            #Salvo informacion Estadistica en html
+            #Salvo informacion Estadistica en html y/o excel
             
             df_new = stat.to_frame()
             
