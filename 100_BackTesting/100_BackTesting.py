@@ -18,13 +18,19 @@ sys.path.append("C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/progr
 
 from eurostoxx import tickers_eurostoxx
 from ibex import tickers_ibex
+from sp500 import tickers_sp500
+from nasdaq import tickers_nasdaq
 
 lstm = importlib.import_module("LSTM", "C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM/")
 
 
 from backtesting.test import SMA, GOOG
 
-
+# J3_DEBUG__ = False  #variable global (global J3_DEBUG__ )
+TELEGRAM__ = True
+sys.path.insert(0,"C:\\Users\\INNOVACION\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria")
+import quant_j3_lib as quant_j
+from telegram_bot import *
 
 
 
@@ -120,7 +126,7 @@ if __name__ == '__main__':
     fechaInicio_ = dt.datetime(2005,1,10)
     fechaFin_ = dt.datetime.today()  #- dt.timedelta(days=1)    #dt.datetime(2023,2,21)
     #dias_a_futuro = 2
-    tickers= tickers_eurostoxx+tickers_ibex
+    tickers=  tickers_ibex + tickers_eurostoxx  #+ tickers_nasdaq   #tickers_ibex+tickers_eurostoxx+tickers_sp500
     
     for dias_a_futuro in [4]:   #Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
     
@@ -146,8 +152,14 @@ if __name__ == '__main__':
             
             dfpl_a = myLSTMnet_4D_Close.dfx[:].copy() #No me vale porque he quitado valores para que trabaje mejor la red
             
-            dfpl = yf.download(instrumento_, fechaInicio_,fechaFin_)
-            
+            #dfpl = yf.download(instrumento_, fechaInicio_,fechaFin_)
+
+            try: 
+                dfpl = yf.download(instrumento_,  fechaInicio_,fechaFin_ )
+            except:
+                #logging.info('Ticker no existe'+instrumento_)
+                continue
+                
             dfpl['signal']=1
             dfpl["signal"].iloc[-200:]=df_signal['signal'].iloc[-200:].copy()
             dfpl['predi']=1
@@ -213,7 +225,7 @@ if __name__ == '__main__':
             bt.plot(show_legend=True, plot_width=None, plot_equity=True, plot_return=False, 
             plot_pl=True, plot_volume=True, plot_drawdown=False, smooth_equity=False, relative_equity=True, 
             superimpose=True, resample=False, reverse_indicators=False, open_browser=False,
-            filename=("../reports/temp/"+instrumento_+"_"+str(dias_a_futuro)+"d_"+".html"))
+            filename=("../reports/temp/"+instrumento_+"_"+str(dias_a_futuro)+"d_Close"+".html"))
             
             
             #Salvo informacion Estadistica en html y/o excel
@@ -248,6 +260,14 @@ if __name__ == '__main__':
             import webbrowser
             webbrowser.open("../reports/temp/stat_"+instrumento_+".html")    
             """    
+            
+            ## Comunico TELEGRAM si hay señal hoy
+            print ("punto break")
+            if(TELEGRAM__):
+                if( dfpl["signal"].iloc[-1]== 1 ):
+                    telegram_send("Señal Estrategia 10 LSTM v1\nMira (IN) " +instrumento_+"  Expectancy = "+ str(stat[25]))
+                    #telegram_send("TP--> +(precioCompra_+beneficioEsperado_) +  SL--> +(precioCompra_ - (stoploss_))")
+            
     
     print(stat._trades)
     print('This is it................ 7')
