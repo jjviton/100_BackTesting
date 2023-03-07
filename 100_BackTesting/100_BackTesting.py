@@ -1,6 +1,32 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+
+"""
+******************************************************************************
+Aplicaion que ejecuta Backtesting para una estrategia dada. Esta es la base 
+para probar cualquier estrategia. En mejora continua
+
+Scheduler: esta progrmada para poder ejecutarse con el schedular de windows.
+Lanzamos una tarea al fichero cierre???.bat y paramos como parametro USA/EU
+para segun la hora analizar un mercado u otro.
+ 
+******************************************************************************
+******************************************************************************
+
+Mejoras:    
+
+Started on MAR/2023
+Version_1: 
+
+Objetivo: 
+
+Author: J3Viton
+
+"""
+
+
+
 #https://kernc.github.io/backtesting.py/
 
 import yfinance as yf
@@ -83,6 +109,8 @@ class MyStrat(Strategy):
         self.contador=0
         
         
+        
+        
 
     def next(self):
         """
@@ -118,15 +146,25 @@ class MyStrat(Strategy):
 #     def main():   
 if __name__ == '__main__':   
 
+    telegram_send("///////////////////////////////////////////////////////")
 
-
-    
     #################### PROBAMOS LA ESTRATEGIA
     # Determino las fechas
     fechaInicio_ = dt.datetime(2005,1,10)
     fechaFin_ = dt.datetime.today()  #- dt.timedelta(days=1)    #dt.datetime(2023,2,21)
     #dias_a_futuro = 2
-    tickers=  tickers_ibex + tickers_eurostoxx  #+ tickers_nasdaq   #tickers_ibex+tickers_eurostoxx+tickers_sp500
+    
+    if (sys.argv[1]== 'EU'):
+        print('Mercado Europeo')
+        telegram_send("EUROPA Estrategia 10: LSTM")
+        tickers=  tickers_ibex + tickers_eurostoxx
+    elif (sys.argv[1]== 'USA'):
+        print('Mercado Americano')
+        telegram_send("USA Estrategia 10: LSTM")
+        tickers=  tickers_nasdaq
+    
+    
+    #tickers=  tickers_nasdaq   #tickers_ibex+tickers_eurostoxx+tickers_sp500  tickers_ibex + tickers_eurostoxx
     
     for dias_a_futuro in [4]:   #Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
     
@@ -271,4 +309,5 @@ if __name__ == '__main__':
     
     print(stat._trades)
     print('This is it................ 7')
+    telegram_send("This is it......")
     
