@@ -54,6 +54,7 @@ from backtesting.test import SMA, GOOG
 
 # J3_DEBUG__ = False  #variable global (global J3_DEBUG__ )
 TELEGRAM__ = True
+
 sys.path.insert(0,"C:\\Users\\INNOVACION\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria")
 import quant_j3_lib as quant_j
 from telegram_bot import *
@@ -162,9 +163,7 @@ if __name__ == '__main__':
         print('Mercado Americano')
         telegram_send("USA Estrategia 10: LSTM")
         tickers=  tickers_nasdaq
-    
-    
-    #tickers=  tickers_nasdaq   #tickers_ibex+tickers_eurostoxx+tickers_sp500  tickers_ibex + tickers_eurostoxx
+
     
     for dias_a_futuro in [4]:   #Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
     
@@ -184,6 +183,7 @@ if __name__ == '__main__':
             #Finalmente solo aplicamos la estrategia close
             df_signal= df_signal_Close
             
+            #ver= myLSTMnet_4D_Close.loss
             
             ########################################################
             
@@ -196,6 +196,8 @@ if __name__ == '__main__':
                 dfpl = yf.download(instrumento_,  fechaInicio_,fechaFin_ )
             except:
                 #logging.info('Ticker no existe'+instrumento_)
+                continue
+            if dfpl.empty:
                 continue
                 
             dfpl['signal']=1
@@ -303,7 +305,10 @@ if __name__ == '__main__':
             print ("punto break")
             if(TELEGRAM__):
                 if( dfpl["signal"].iloc[-1]== 1 ):
-                    telegram_send("Señal Estrategia 10 LSTM v1\nMira (IN) " +instrumento_+"  Expectancy = "+ str(stat[25]))
+                    telegram_send("Señal Estrategia 10 LSTM v1\n(IN)" +instrumento_
+                                  +" Exp="+ str(round(stat[25], 1))+" Ret="+ str(round(stat[6], 1))  +" Win="+ str(round(stat[17], 1)))
+                    ver= myLSTMnet_4D_Close.__getattribute__('loss')
+                    telegram_send("\nLoss " + str(round(myLSTMnet_4D_Close.loss,3)))
                     #telegram_send("TP--> +(precioCompra_+beneficioEsperado_) +  SL--> +(precioCompra_ - (stoploss_))")
             
     
