@@ -47,7 +47,8 @@ from ibex import tickers_ibex
 from sp500 import tickers_sp500
 from nasdaq import tickers_nasdaq
 
-lstm = importlib.import_module("LSTM", "C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM/")
+
+lstm = importlib.import_module("LSTM", "C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM")
 
 
 from backtesting.test import SMA, GOOG
@@ -134,7 +135,7 @@ class MyStrat(Strategy):
             """
             self.buy()
             
-        if (self.data.hull[-1] < self.data.hull[-2] ):  #El dataframe que no se incluye en llamada a run() nos eincrementan
+        if (self.data.hull[-1] < self.data.hull[-2] ): 
             self.position.close()
         if(self.data.Close[-1] < 2*slatr):  #StopLoss    
             self.position.close()   
@@ -147,7 +148,7 @@ class MyStrat(Strategy):
 #     def main():   
 if __name__ == '__main__':   
 
-    telegram_send("///////////////////////////////////////////////////////")
+    telegram_send("%%%%%%%%%%%%%%%%%%%%%%%%%_v2 ")
 
     #################### PROBAMOS LA ESTRATEGIA
     # Determino las fechas
@@ -158,7 +159,7 @@ if __name__ == '__main__':
     if (sys.argv[1]== 'EU'):
         print('Mercado Europeo')
         telegram_send("EUROPA Estrategia 10: LSTM")
-        tickers=  tickers_ibex + tickers_eurostoxx
+        tickers=  tickers_eurostoxx +tickers_ibex 
     elif (sys.argv[1]== 'USA'):
         print('Mercado Americano')
         telegram_send("USA Estrategia 10: LSTM")
@@ -176,7 +177,7 @@ if __name__ == '__main__':
             #df_signal_hull, predi, prediDesplazado = myLSTMnet_4D_hull.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
             
             myLSTMnet_4D_Close = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'Close')          #Creamos la clase
-            df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
+            df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True)
             
             #df_signal=df_signal_hull['signal'] & df_signal_Close['signal']   #uno las señales
             #df_signal=df_signal.to_frame()
@@ -270,7 +271,8 @@ if __name__ == '__main__':
             
             #Salvo informacion Estadistica en html y/o excel
             
-            df_new = stat.to_frame()
+            df_new= stat.to_frame()
+            df_new.rename(columns={0:instrumento_}, inplace=True)
             
             file_path ="../reports/temp/"+instrumento_+".xlsx"
             try:
@@ -302,16 +304,49 @@ if __name__ == '__main__':
             """    
             
             ## Comunico TELEGRAM si hay señal hoy
-            print ("punto break")
+            
             if(TELEGRAM__):
+                print ("punto break")
+                
                 if( dfpl["signal"].iloc[-1]== 1 ):
-                    telegram_send("Señal Estrategia 10 LSTM v1\n(IN)" +instrumento_
-                                  +" Exp="+ str(round(stat[25], 1))+" Ret="+ str(round(stat[6], 1))  +" Win="+ str(round(stat[17], 1)))
-                    ver= myLSTMnet_4D_Close.__getattribute__('loss')
-                    telegram_send("\nLoss " + str(round(myLSTMnet_4D_Close.loss,3)))
+                    try:
+                        telegram_send("Señal Estrategia 10 LSTM v2\n(IN)" +instrumento_
+                                  +" Exp="+ str(round(stat[25], 1))+" Ret="+ str(round(stat[6], 1))  +" Win="+ str(round(stat[18], 1))+
+                                  "\nLoss " + str(round(myLSTMnet_4D_Close.loss,3)))
+                    except:
+                        print("error Telegram")
+                        continue
+                    
+                    
+                    #ver= myLSTMnet_4D_Close.__getattribute__('loss')
+                    #telegram_send("\nLoss " + str(round(myLSTMnet_4D_Close.loss,3)))
                     #telegram_send("TP--> +(precioCompra_+beneficioEsperado_) +  SL--> +(precioCompra_ - (stoploss_))")
             
-    
+            
+            ##################  Excel con todos los valores
+            file_path ="../reports/temp/0_becnchmark.xlsx"
+            try:
+                df_existing = pd.DataFrame() #columns=[instrumento_])
+                df_existing= pd.read_excel(file_path, index_col=0)
+                
+                """
+                with pd.ExcelWriter(file_path, engine='openpyxl', mode='a') as writer:
+                        # agregar el nuevo DataFrame a una nueva hoja 
+                        df_new.to_excel(writer, sheet_name=str(dias_a_futuro), index=False)
+                """
+                df4= pd.concat([df_existing, df_new], axis=1)
+                df4.to_excel(file_path, 
+                     index=True,
+                     )
+                
+            except:             #La primera ronda no existe el fichero
+                df_new.to_excel(file_path, 
+                     index=True
+                     )  #sheet_name=str(dias_a_futuro)            
+            
+            
+            
+            
     print(stat._trades)
     print('This is it................ 7')
     telegram_send("This is it......")
