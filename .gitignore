@@ -1,5 +1,7 @@
 #  Mis ignores J3viton
 
+/models/
+
 *.pdf
 *.html
 *.zip

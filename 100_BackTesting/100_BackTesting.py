@@ -40,6 +40,7 @@ import importlib
 import sys
 sys.path.append("C:\\Users\\INNOVACION\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria")
 sys.path.append("C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM/")
+sys.path.append("C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/999_Automatic/999_Automatic")
 
 
 from eurostoxx import tickers_eurostoxx
@@ -49,12 +50,15 @@ from nasdaq import tickers_nasdaq
 
 
 lstm = importlib.import_module("LSTM", "C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM")
+automatic = importlib.import_module("automatic", "C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/999_Automatic/999_Automatic")
+
 
 
 from backtesting.test import SMA, GOOG
 
 # J3_DEBUG__ = False  #variable global (global J3_DEBUG__ )
 TELEGRAM__ = True
+ALPACA__ = True
 
 sys.path.insert(0,"C:\\Users\\INNOVACION\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria")
 import quant_j3_lib as quant_j
@@ -164,6 +168,11 @@ if __name__ == '__main__':
         print('Mercado Americano')
         telegram_send("USA Estrategia 10: LSTM")
         tickers=  tickers_nasdaq
+        
+        
+    #test
+    #Llamamos al constructor de la Clase
+    alpacaAPI= automatic.tradeAPIClass()    
 
     
     for dias_a_futuro in [4]:   #Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
@@ -304,7 +313,6 @@ if __name__ == '__main__':
             """    
             
             ## Comunico TELEGRAM si hay señal hoy
-            
             if(TELEGRAM__):
                 print ("punto break")
                 
@@ -321,7 +329,22 @@ if __name__ == '__main__':
                     #ver= myLSTMnet_4D_Close.__getattribute__('loss')
                     #telegram_send("\nLoss " + str(round(myLSTMnet_4D_Close.loss,3)))
                     #telegram_send("TP--> +(precioCompra_+beneficioEsperado_) +  SL--> +(precioCompra_ - (stoploss_))")
-            
+                    
+                    
+            ## Llamo a ALPACA para comprar
+            ## Parametros Expectancy >3
+            if(ALPACA__):
+                print ("Pasando por Alpaca")
+                if( (dfpl["signal"].iloc[-1]== 1) and  
+                   (stat[25]>3)
+                   ):
+                    try:
+                        #Poner una orden
+                        orderID= alpacaAPI.placeOrder(instrumento_, quantity_=1)
+                    except:
+                        print("error ALPACA")
+                        continue
+          
             
             ##################  Excel con todos los valores
             file_path ="../reports/temp/0_becnchmark.xlsx"
