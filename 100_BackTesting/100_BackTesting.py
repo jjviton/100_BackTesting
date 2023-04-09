@@ -47,6 +47,7 @@ from eurostoxx import tickers_eurostoxx
 from ibex import tickers_ibex
 from sp500 import tickers_sp500
 from nasdaq import tickers_nasdaq
+from russell import tickers_russell_2000
 
 
 lstm = importlib.import_module("LSTM", "C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM")
@@ -168,6 +169,9 @@ if __name__ == '__main__':
         print('Mercado Americano')
         telegram_send("USA Estrategia 10: LSTM")
         tickers=  tickers_nasdaq
+    elif (sys.argv[1]== 'RUSSELL'):     
+        telegram_send("RUSSELL Estrategia 10: LSTM")
+        tickers= tickers_russell_2000
         
         
     #test
@@ -186,7 +190,12 @@ if __name__ == '__main__':
             #df_signal_hull, predi, prediDesplazado = myLSTMnet_4D_hull.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
             
             myLSTMnet_4D_Close = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'Close')          #Creamos la clase
-            df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True)
+            
+            
+            if (sys.argv[1]== 'RUSSELL'):    #no tengo modelo    
+                df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=False)
+            else:
+                df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True)        
             
             #df_signal=df_signal_hull['signal'] & df_signal_Close['signal']   #uno las señales
             #df_signal=df_signal.to_frame()
@@ -314,9 +323,11 @@ if __name__ == '__main__':
             
             ## Comunico TELEGRAM si hay señal hoy
             if(TELEGRAM__):
-                print ("punto break")
+                print ("Pasando por Telegram/backtessting")
                 
-                if( dfpl["signal"].iloc[-1]== 1 ):
+                if( (dfpl["signal"].iloc[-1]== 1) and  
+                   (stat[25]>2) and (stat[6]>20) and(stat[18]>50)                                     
+                   ):
                     try:
                         telegram_send("Señal Estrategia 10 LSTM v2\n(IN)" +instrumento_
                                   +" Exp="+ str(round(stat[25], 1))+" Ret="+ str(round(stat[6], 1))  +" Win="+ str(round(stat[18], 1))+
@@ -336,7 +347,7 @@ if __name__ == '__main__':
             if(ALPACA__):
                 print ("Pasando por Alpaca")
                 if( (dfpl["signal"].iloc[-1]== 1) and  
-                   (stat[25]>3)
+                   (stat[25]>2) and (stat[6]>20) and(stat[18]>50)
                    ):
                     try:
                         #Poner una orden
