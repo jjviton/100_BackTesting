@@ -132,7 +132,7 @@ class MyStrat(Strategy):
         TPSLRatio = 1.2*TPSL_Ratio
         
         ## Logia de la estrategia
-        if self.signal1==1: #and len(self.trades)<=2:   
+        if self.signal1>1: #and len(self.trades)<=2:   
             """
             sl1 = self.data.Close[-1] - 2*slatr
             tp1 = self.data.Close[-1] + 2*slatr*TPSLRatio            
@@ -159,12 +159,12 @@ if __name__ == '__main__':
     # Determino las fechas
     fechaInicio_ = dt.datetime(2005,1,10)
     fechaFin_ = dt.datetime.today()  #- dt.timedelta(days=1)    #dt.datetime(2023,2,21)
-    #dias_a_futuro = 2
+    dias_a_futuro = 4
     
     if (sys.argv[1]== 'EU'):
         print('Mercado Europeo')
         telegram_send("EUROPA Estrategia 10: LSTM")
-        tickers=  tickers_eurostoxx +tickers_ibex 
+        tickers=  tickers_eurostoxx #+tickers_ibex 
     elif (sys.argv[1]== 'USA'):
         print('Mercado Americano')
         telegram_send("USA Estrategia 10: LSTM")
@@ -179,11 +179,26 @@ if __name__ == '__main__':
     alpacaAPI= automatic.tradeAPIClass()    
 
     
-    for dias_a_futuro in [4]:   #Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
+    for dias_a_futuro in [4]:  #range(0,2):   Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
     
         for jjj in range(0,len(tickers )): 
-            
             instrumento_ =tickers[jjj]
+            
+            ###♥ Chequeo por si no hay datos
+            try: 
+                dfpl = yf.download(instrumento_,  fechaInicio_,fechaFin_ )
+            except:
+                #logging.info('Ticker no existe'+instrumento_)
+                continue
+            if dfpl.empty:
+                continue
+            if len(dfpl) <300:
+                continue
+            ##Ver si tiene pocos datos        
+            
+            
+            
+
             
             ########################### UNA prediciones HULL and CLOSE
             #myLSTMnet_4D_hull = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'hull')          #Creamos la clase
@@ -211,6 +226,7 @@ if __name__ == '__main__':
             
             #dfpl = yf.download(instrumento_, fechaInicio_,fechaFin_)
 
+            """            
             try: 
                 dfpl = yf.download(instrumento_,  fechaInicio_,fechaFin_ )
             except:
@@ -218,6 +234,7 @@ if __name__ == '__main__':
                 continue
             if dfpl.empty:
                 continue
+            """
                 
             dfpl['signal']=1
             dfpl["signal"].iloc[-200:]=df_signal['signal'].iloc[-200:].copy()
@@ -325,15 +342,15 @@ if __name__ == '__main__':
             if(TELEGRAM__):
                 print ("Pasando por Telegram/backtessting")
                 
-                if( (dfpl["signal"].iloc[-1]== 1) and  
+                if( (dfpl["signal"].iloc[-1] > 1) and  
                    (stat[25]>2) and (stat[6]>20) and(stat[18]>50)                                     
                    ):
                     try:
                         telegram_send("Señal Estrategia 10 LSTM v2\n(IN)" +instrumento_
                                   +" Exp="+ str(round(stat[25], 1))+" Ret="+ str(round(stat[6], 1))  +" Win="+ str(round(stat[18], 1))+
-                                  "\nLoss " + str(round(myLSTMnet_4D_Close.loss,3)))
+                                  "\n % " + str(round(dfpl["signal"].iloc[-1],2)))
                     except:
-                        print("error Telegram")
+                        print("error Telegram 4")
                         continue
                     
                     
@@ -346,7 +363,7 @@ if __name__ == '__main__':
             ## Parametros Expectancy >3
             if(ALPACA__):
                 print ("Pasando por Alpaca")
-                if( (dfpl["signal"].iloc[-1]== 1) and  
+                if( (dfpl["signal"].iloc[-1] > 1) and  
                    (stat[25]>2) and (stat[6]>20) and(stat[18]>50)
                    ):
                     try:
