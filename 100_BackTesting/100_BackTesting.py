@@ -153,13 +153,15 @@ class MyStrat(Strategy):
 #     def main():   
 if __name__ == '__main__':   
 
-    telegram_send("%%%%%%%%%%%%%%%%%%%%%%%%%_v2 ")
+    telegram_send("__________________________v3 ")
 
     #################### PROBAMOS LA ESTRATEGIA
     # Determino las fechas
     fechaInicio_ = dt.datetime(2005,1,10)
     fechaFin_ = dt.datetime.today()  #- dt.timedelta(days=1)    #dt.datetime(2023,2,21)
     dias_a_futuro = 4
+    flag01= False
+    
     
     if (sys.argv[1]== 'EU'):
         print('Mercado Europeo')
@@ -183,6 +185,7 @@ if __name__ == '__main__':
     
         for jjj in range(0,len(tickers )): 
             instrumento_ =tickers[jjj]
+            telegram_ping()
             
             ###♥ Chequeo por si no hay datos
             try: 
@@ -348,7 +351,8 @@ if __name__ == '__main__':
                     try:
                         telegram_send("Señal Estrategia 10 LSTM v2\n(IN)" +instrumento_
                                   +" Exp="+ str(round(stat[25], 1))+" Ret="+ str(round(stat[6], 1))  +" Win="+ str(round(stat[18], 1))+
-                                  "\n % " + str(round(dfpl["signal"].iloc[-1],2)))
+                                  "\n % rampUp  " + str(round(dfpl["signal"].iloc[-1],2)))
+                        flag01=True
                     except:
                         print("error Telegram 4")
                         continue
@@ -367,33 +371,44 @@ if __name__ == '__main__':
                    (stat[25]>2) and (stat[6]>20) and(stat[18]>50)
                    ):
                     try:
+                        #Llamar al moneyManagement
+                        TP_= ((dfpl["signal"].iloc[-1]*dfpl['Close'].iloc[-1])/100) 
+                        SL_=1*dfpl['ATR'].iloc[-1]
+                        cantidad= alpacaAPI.moneyManag(instrumento_, TP_, SL_)
                         #Poner una orden
-                        orderID= alpacaAPI.placeOrder(instrumento_, quantity_=1)
+                        if (cantidad > 0):
+                            orderID= alpacaAPI.placeOrder(instrumento_, cantidad)
+                        
+                        telegram_send("TP = " +str(round(TP_,1))
+                                  +" SL= "+ str(round(SL_,1)) +" Cantidad = "+ str(cantidad))
                     except:
                         print("error ALPACA")
                         continue
           
             
             ##################  Excel con todos los valores
-            file_path ="../reports/temp/0_becnchmark.xlsx"
-            try:
-                df_existing = pd.DataFrame() #columns=[instrumento_])
-                df_existing= pd.read_excel(file_path, index_col=0)
-                
-                """
-                with pd.ExcelWriter(file_path, engine='openpyxl', mode='a') as writer:
-                        # agregar el nuevo DataFrame a una nueva hoja 
-                        df_new.to_excel(writer, sheet_name=str(dias_a_futuro), index=False)
-                """
-                df4= pd.concat([df_existing, df_new], axis=1)
-                df4.to_excel(file_path, 
-                     index=True,
-                     )
-                
-            except:             #La primera ronda no existe el fichero
-                df_new.to_excel(file_path, 
-                     index=True
-                     )  #sheet_name=str(dias_a_futuro)            
+            print('borrar')
+            if (flag01== True):   #solo grabo el excel si hay señal buena
+                flag01=False
+                file_path ="../reports/temp/0_becnchmark.xlsx"
+                try:
+                    df_existing = pd.DataFrame() #columns=[instrumento_])
+                    df_existing= pd.read_excel(file_path, index_col=0)
+                    
+                    """
+                    with pd.ExcelWriter(file_path, engine='openpyxl', mode='a') as writer:
+                            # agregar el nuevo DataFrame a una nueva hoja 
+                            df_new.to_excel(writer, sheet_name=str(dias_a_futuro), index=False)
+                    """
+                    df4= pd.concat([df_existing, df_new], axis=1)
+                    df4.to_excel(file_path, 
+                         index=True,
+                         )
+                    
+                except:             #La primera ronda no existe el fichero
+                    df_new.to_excel(file_path, 
+                         index=True
+                         )  #sheet_name=str(dias_a_futuro)            
             
             
             
