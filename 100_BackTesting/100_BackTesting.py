@@ -225,7 +225,7 @@ if __name__ == '__main__':
             ########################################################
             
             
-            dfpl_a = myLSTMnet_4D_Close.dfx[:].copy() #No me vale porque he quitado valores para que trabaje mejor la red
+            dfpl_a = myLSTMnet_4D_Close.dfx[:].copy() #
             
             #dfpl = yf.download(instrumento_, fechaInicio_,fechaFin_)
 
@@ -378,13 +378,19 @@ if __name__ == '__main__':
                         #Poner una orden
                         if (cantidad > 0):
                             orderID= alpacaAPI.placeOrder(instrumento_, cantidad)
+                            #Anoto en carteta                            
+                            nuevaPosicion ={'asset':instrumento_ , 'qty':cantidad,'buyPrice':dfpl['Close'].iloc[-1],'buyDay':dt.datetime.today(),
+                                            'SL':SL_, 'TP':TP_, 'sellDay':'0', 'sellPrice':0, 'reason':'0'}
+                            #alpacaAPI.cartera202301 = alpacaAPI.cartera202301.append(nuevaPosicion, ignore_index=True)
+                            alpacaAPI.actualizarCartera('cartera01', nuevaPosicion)                        
+
                         
                         telegram_send("TP = " +str(round(TP_,1))
                                   +" SL= "+ str(round(SL_,1)) +" Cantidad = "+ str(cantidad))
                     except:
                         print("error ALPACA")
                         continue
-          
+
             
             ##################  Excel con todos los valores
             print('borrar')
