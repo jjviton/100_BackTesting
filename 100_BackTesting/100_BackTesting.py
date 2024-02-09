@@ -4,7 +4,9 @@
 
 """
 ******************************************************************************
-Aplicaion que ejecuta Backtesting para una estrategia dada. Esta es la base 
+100_BackTesting.py 
+
+Aplicacion que ejecuta Backtesting para una estrategia dada. Esta es la base 
 para probar cualquier estrategia. En mejora continua
 
 Scheduler: esta progrmada para poder ejecutarse con el schedular de windows.
@@ -38,9 +40,9 @@ import datetime as dt
 import importlib
 
 import sys
-sys.path.append("C:\\Users\\INNOVACION\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria")
-sys.path.append("C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM/")
-sys.path.append("C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/999_Automatic/999_Automatic")
+sys.path.append("C:\\Users\\jjjimenez\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria")
+sys.path.append("C:/Users/jjjimenez/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM/")
+sys.path.append("C:/Users/jjjimenez/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/999_Automatic/999_Automatic")
 
 
 from eurostoxx import tickers_eurostoxx
@@ -48,10 +50,11 @@ from ibex import tickers_ibex
 from sp500 import tickers_sp500
 from nasdaq import tickers_nasdaq
 from russell import tickers_russell_2000
+from comodities import tickers_commodity
 
 
-lstm = importlib.import_module("LSTM", "C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM")
-automatic = importlib.import_module("automatic", "C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/999_Automatic/999_Automatic")
+lstm = importlib.import_module("LSTM", "C:/Users/jjjimenez/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM")
+automatic = importlib.import_module("automatic", "C:/Users/jjjimenez/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/999_Automatic/999_Automatic")
 
 
 
@@ -61,7 +64,7 @@ from backtesting.test import SMA, GOOG
 TELEGRAM__ = True
 ALPACA__ = True
 
-sys.path.insert(0,"C:\\Users\\INNOVACION\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria")
+sys.path.insert(0,"C:\\Users\\jjjimenez\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria")
 import quant_j3_lib as quant_j
 from telegram_bot import *
 
@@ -155,11 +158,8 @@ if __name__ == '__main__':
 
     telegram_send("__________________________v3 ")
 
-    #################### PROBAMOS LA ESTRATEGIA
-    # Determino las fechas
-    fechaInicio_ = dt.datetime(2005,1,10)
-    fechaFin_ = dt.datetime.today()  #- dt.timedelta(days=1)    #dt.datetime(2023,2,21)
-    dias_a_futuro = 4
+
+    dias_a_futuro = 0
     flag01= False
     
     
@@ -170,18 +170,22 @@ if __name__ == '__main__':
     elif (sys.argv[1]== 'USA'):
         print('Mercado Americano')
         telegram_send("USA Estrategia 10: LSTM")
-        tickers=  tickers_nasdaq
+        tickers=  tickers_nasdaq #+ tickers_commodity
     elif (sys.argv[1]== 'RUSSELL'):     
         telegram_send("RUSSELL Estrategia 10: LSTM")
         tickers= tickers_russell_2000
+     
         
+     #Probamos valores concretos para depurar
         
+    #tickers = ["AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
+     
     #test
     #Llamamos al constructor de la Clase
     alpacaAPI= automatic.tradeAPIClass()    
 
     
-    for dias_a_futuro in [4]:  #range(0,2):   Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
+    for dias_a_futuro in [3]:  #range(0,2):   Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
     
         for jjj in range(0,len(tickers )): 
             instrumento_ =tickers[jjj]
@@ -189,13 +193,18 @@ if __name__ == '__main__':
             
             ###♥ Chequeo por si no hay datos
             try: 
+                #################### PROBAMOS LA ESTRATEGIA
+                # Determino las fechas, que NO se han visto en training
+                fechaInicio_ = dt.datetime.today()  - dt.timedelta(days=510)
+                fechaFin_ = dt.datetime.today()  #- dt.timedelta(days=1)    #dt.datetime(2023,2,21)
+                
                 dfpl = yf.download(instrumento_,  fechaInicio_,fechaFin_ )
             except:
                 #logging.info('Ticker no existe'+instrumento_)
                 continue
             if dfpl.empty:
                 continue
-            if len(dfpl) <300:
+            if len(dfpl) <200:
                 continue
             ##Ver si tiene pocos datos        
             
@@ -209,6 +218,9 @@ if __name__ == '__main__':
             
             myLSTMnet_4D_Close = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'Close')          #Creamos la clase
             
+            # Ojo que estoy haciendo el BACKTESTING con datos con los que he entrenado... pero a la vez no quiero dejar datos
+            #del pasado cercano fuera del modelo. 
+            #Tendria que hacer backtesting con los datos de test y luego guardar los parametros
             
             if (sys.argv[1]== 'RUSSELL'):    #no tengo modelo    
                 df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=False)
@@ -339,7 +351,7 @@ if __name__ == '__main__':
                 file.write(html)
             import webbrowser
             webbrowser.open("../reports/temp/stat_"+instrumento_+".html")    
-            """    
+            """         
             
             ## Comunico TELEGRAM si hay señal hoy
             if(TELEGRAM__):
@@ -364,9 +376,11 @@ if __name__ == '__main__':
                     
                     
             ## Llamo a ALPACA para comprar
-            ## Parametros Expectancy >3
+            ## Parametros Expectancy stat[25] >2  Return stat[6]>20   WinRate stat[18]>50
+            
             if(ALPACA__):
                 print ("Pasando por Alpaca")
+                #Aqui tenemos un error conceptual, estamos avaluando KPI con datos que hemos usado en el entreno, Asi no!!! :-)
                 if( (dfpl["signal"].iloc[-1] > 1) and  
                    (stat[25]>2) and (stat[6]>20) and(stat[18]>50)
                    ):
@@ -419,7 +433,7 @@ if __name__ == '__main__':
             
             
             
-    print(stat._trades)
+            print(stat._trades)
     print('This is it................ 7')
     telegram_send("This is it......")
     
