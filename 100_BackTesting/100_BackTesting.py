@@ -156,7 +156,7 @@ class MyStrat(Strategy):
 #     def main():   
 if __name__ == '__main__':   
 
-    telegram_send("__________________________v3 ")
+    telegram_send("__________________________v4 Feb2024 ")
 
 
     dias_a_futuro = 0
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     for dias_a_futuro in [3]:  #range(0,2):   Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
     
         for jjj in range(0,len(tickers )): 
-            instrumento_ =tickers[jjj]
+            instrumento_ =  tickers[jjj]
             telegram_ping()
             
             ###♥ Chequeo por si no hay datos
@@ -207,11 +207,7 @@ if __name__ == '__main__':
             if len(dfpl) <200:
                 continue
             ##Ver si tiene pocos datos        
-            
-            
-            
-
-            
+         
             ########################### UNA prediciones HULL and CLOSE
             #myLSTMnet_4D_hull = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'hull')          #Creamos la clase
             #df_signal_hull, predi, prediDesplazado = myLSTMnet_4D_hull.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
@@ -225,7 +221,7 @@ if __name__ == '__main__':
             if (sys.argv[1]== 'RUSSELL'):    #no tengo modelo    
                 df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=False)
             else:
-                df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True)        
+                df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True, fullDataSet=False)        
             
             #df_signal=df_signal_hull['signal'] & df_signal_Close['signal']   #uno las señales
             #df_signal=df_signal.to_frame()
@@ -343,7 +339,15 @@ if __name__ == '__main__':
                 df_new.to_excel(file_path, 
                      index=True,
                      )  #sheet_name=str(dias_a_futuro)
-            
+                
+            #MARCO ESTRATEGIA EN REAL ES BUENA
+            estrategia =False
+            if( (stat[25]>1) and (stat[6]>10) and(stat[18]>25) ):       #(stat[25]>2) and (stat[6]>20) and(stat[18]>50)  
+                    #[6]=return [25]=expentace  [18]=winrate
+                estrategia =True
+                #cargo el modelo entrenado con todos los datos a ver que me dice para hoy
+                df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True, fullDataSet=True)     
+               
             #Convertimos a html
             """
             html = df.to_html()
@@ -357,9 +361,7 @@ if __name__ == '__main__':
             if(TELEGRAM__):
                 print ("Pasando por Telegram/backtessting")
                 
-                if( (dfpl["signal"].iloc[-1] > 1) and  
-                   (stat[25]>2) and (stat[6]>20) and(stat[18]>50)                                     
-                   ):
+                if( (dfpl["signal"].iloc[-1] > 1) and  (estrategia==True)):
                     try:
                         telegram_send("Señal Estrategia 10 LSTM v2\n(IN)" +instrumento_
                                   +" Exp="+ str(round(stat[25], 1))+" Ret="+ str(round(stat[6], 1))  +" Win="+ str(round(stat[18], 1))+
@@ -381,9 +383,7 @@ if __name__ == '__main__':
             if(ALPACA__):
                 print ("Pasando por Alpaca")
                 #Aqui tenemos un error conceptual, estamos avaluando KPI con datos que hemos usado en el entreno, Asi no!!! :-)
-                if( (dfpl["signal"].iloc[-1] > 1) and  
-                   (stat[25]>2) and (stat[6]>20) and(stat[18]>50)
-                   ):
+                if( (dfpl["signal"].iloc[-1] > 1) and (estrategia==True)):
                     try:
                         #Llamar al moneyManagement
                         TP_= ((dfpl["signal"].iloc[-1]*dfpl['Close'].iloc[-1])/100) 
