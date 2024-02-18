@@ -340,7 +340,7 @@ if __name__ == '__main__':
                      index=True,
                      )  #sheet_name=str(dias_a_futuro)
                 
-            #MARCO ESTRATEGIA EN REAL ES BUENA
+            #MARCO ESTRATEGIA EN REAL ES BUENA..
             estrategia =False
             if( (stat[25]>1) and (stat[6]>10) and(stat[18]>25) ):       #(stat[25]>2) and (stat[6]>20) and(stat[18]>50)  
                     #[6]=return [25]=expentace  [18]=winrate
