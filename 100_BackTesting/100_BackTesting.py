@@ -189,6 +189,7 @@ if __name__ == '__main__':
     
         for jjj in range(0,len(tickers )): 
             instrumento_ =  tickers[jjj]
+            #instrumento_ = 'ALGN'
             telegram_ping()
             
             ###♥ Chequeo por si no hay datos
@@ -403,6 +404,7 @@ if __name__ == '__main__':
                                   +" SL= "+ str(round(SL_,1)) +" Cantidad = "+ str(cantidad))
                     except:
                         print("error ALPACA")
+                        telegram_send("error Alpaca try")
                         continue
 
             
