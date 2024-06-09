@@ -119,13 +119,14 @@ class MyStrat(Strategy):
         self.contador=0
         
         
-        
+#fin class        
         
 
     def next(self):
         """
         Descripcion: recorre cada fila una a una, evalua el criterio y decide Buy/Sell en el siguente paso
         Va a recorreer row by row los Indicadores declarados en el metodo I en el init(()) de la clase.
+        
             
         """         
         super().next()
@@ -147,8 +148,23 @@ class MyStrat(Strategy):
             self.position.close()
         if(self.data.Close[-1] < 2*slatr):  #StopLoss    
             self.position.close()   
+            
+        
 
+def fun_estrategia():
+    """
+    DESCRIPTION.  Funcion propia mia nada que ver con el backtesting process. pero me sirve para aisla la estrategia
+    ## Parametros Expectancy stat[25] >2  Return stat[6]>20   WinRate stat[18]>50
+        
+    #(stat[25]>2) and (stat[6]>20) and(stat[18]>50) 
 
+    """
+    expentancy_=stat[25]    #en %
+    return_=stat[6]         #en %
+    winRate_=stat[18]
+    if(expentancy_>(0.6)and(winRate_>33)):   #and (return_>5)
+        return(True)
+    return False
 
 
 
@@ -178,7 +194,7 @@ if __name__ == '__main__':
         
      #Probamos valores concretos para depurar
         
-    #tickers = ["AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
+    #tickers = ["NVDA", "PCAR","AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
      
     #test
     #Llamamos al constructor de la Clase
@@ -343,7 +359,8 @@ if __name__ == '__main__':
                 
             #MARCO ESTRATEGIA EN REAL ES BUENA..
             estrategia =False
-            if( (stat[25]>1) and (stat[6]>10) and(stat[18]>25) ):       #(stat[25]>2) and (stat[6]>20) and(stat[18]>50)  
+            estrategia= fun_estrategia()
+            if( estrategia ):       
                     #[6]=return [25]=expentace  [18]=winrate
                 estrategia =True
                 #cargo el modelo entrenado con todos los datos a ver que me dice para hoy
@@ -383,15 +400,18 @@ if __name__ == '__main__':
             
             if(ALPACA__):
                 print ("Pasando por Alpaca")
-                #Aqui tenemos un error conceptual, estamos avaluando KPI con datos que hemos usado en el entreno, Asi no!!! :-)
+                
                 if( (dfpl["signal"].iloc[-1] > 1) and (estrategia==True)):
                     try:
                         #Llamar al moneyManagement
                         TP_= ((dfpl["signal"].iloc[-1]*dfpl['Close'].iloc[-1])/100) 
                         SL_=1*dfpl['ATR'].iloc[-1]
                         cantidad= alpacaAPI.moneyManag(instrumento_, TP_, SL_)
+
                         #Poner una orden
                         if (cantidad > 0):
+                            
+                            cantidad = int (cantidad)   #convertir a valor entero de acciones a comprar
                             orderID= alpacaAPI.placeOrder(instrumento_, cantidad)
                             #Anoto en carteta                            
                             nuevaPosicion ={'asset':instrumento_ , 'qty':cantidad,'buyPrice':dfpl['Close'].iloc[-1],'buyDay':dt.datetime.today(),
@@ -410,7 +430,7 @@ if __name__ == '__main__':
             
             ##################  Excel con todos los valores
             print('borrar')
-            if (flag01== True):   #solo grabo el excel si hay señal buena
+            if (True or flag01== True):   #solo grabo el excel si hay señal buena
                 flag01=False
                 file_path ="../reports/temp/0_becnchmark.xlsx"
                 try:
@@ -439,3 +459,66 @@ if __name__ == '__main__':
     print('This is it................ 7')
     telegram_send("This is it......")
     
+    
+    """ Backtesting parameter
+    
+    Start (Inicio): La fecha y hora de inicio del período de análisis de la estrategia.
+
+    End (Fin): La fecha y hora de finalización del período de análisis de la estrategia.
+    
+    Duration (Duración): La duración total del período de análisis, expresada en días, horas y minutos.
+    
+    Exposure Time [%] (Tiempo de Exposición [%]): El porcentaje del tiempo total en el que la estrategia estuvo invertida en el mercado.
+    
+    Equity Final [$] (Capital Final [$]): El valor final del capital de la estrategia al final del período de análisis.
+    
+    Equity Peak [$] (Pico de Capital [$]): El valor máximo alcanzado por el capital de la estrategia durante el período de análisis.
+    
+    Return [%] (Rendimiento [%]): El rendimiento total de la estrategia durante el período de análisis, expresado como un porcentaje.
+    
+    Buy & Hold Return [%] (Rendimiento de Compra y Retención [%]): El rendimiento que habría generado un inversor que hubiera comprado y mantenido la inversión durante todo el período de análisis.
+    
+    Return (Ann.) [%] (Rendimiento Anualizado [%]): El rendimiento anualizado de la estrategia, expresado como un porcentaje.
+    
+    Volatility (Ann.) [%] (Volatilidad Anualizada [%]): La volatilidad anualizada de la estrategia, expresada como un porcentaje.
+    
+    Sharpe Ratio (Ratio de Sharpe): Una medida de la relación entre el rendimiento de la estrategia y su volatilidad, ajustada al riesgo.
+    
+    Sortino Ratio (Ratio de Sortino): Similar al Ratio de Sharpe, pero solo tiene en cuenta los rendimientos negativos, lo que lo hace más útil para evaluar estrategias con asimetría de riesgo.
+    
+    Calmar Ratio (Ratio de Calmar): Una medida de la relación entre el rendimiento de la estrategia y su máximo drawdown.
+    
+    Max. Drawdown [%] (Máximo Drawdown [%]): La mayor disminución desde un pico del capital hasta un mínimo durante el período de análisis, expresada como un porcentaje.
+    
+    Avg. Drawdown [%] (Drawdown Promedio [%]): La disminución promedio desde un pico del capital hasta un mínimo durante el período de análisis, expresada como un porcentaje.
+    
+    Max. Drawdown Duration (Duración del Máximo Drawdown): La duración máxima de un drawdown durante el período de análisis.
+    
+    Avg. Drawdown Duration (Duración Promedio del Drawdown): La duración promedio de los drawdowns durante el período de análisis.
+    
+    # Trades (Número de Operaciones): El número total de operaciones realizadas durante el período de análisis.
+    
+    Win Rate [%] (Tasa de Éxito [%]): El porcentaje de operaciones ganadoras sobre el total de operaciones realizadas.
+    
+    Best Trade [%] (Mejor Operación [%]): El mejor rendimiento obtenido en una sola operación, expresado como un porcentaje.
+    
+    Worst Trade [%] (Peor Operación [%]): El peor rendimiento obtenido en una sola operación, expresado como un porcentaje.
+    
+    Avg. Trade [%] (Operación Promedio [%]): El rendimiento promedio de todas las operaciones realizadas, expresado como un porcentaje.
+    
+    Max. Trade Duration (Duración Máxima de la Operación): La duración máxima de una sola operación.
+    
+    Avg. Trade Duration (Duración Promedio de la Operación): La duración promedio de todas las operaciones realizadas.
+    
+    Profit Factor (Factor de Ganancia): La relación entre las ganancias totales y las pérdidas totales de todas las operaciones realizadas.
+    
+    Expectancy [%] (Expectativa [%]): El rendimiento esperado promedio por operación, expresado como un porcentaje. Ganancias por cada 100 euros invertidos
+    
+    SQN (System Quality Number): Una medida de la calidad del sistema de trading, que tiene en cuenta el rendimiento, la volatilidad y el número de operaciones.
+    
+    _strategy (_estrategia): El nombre de la estrategia utilizada en el análisis.
+    
+    _equity_curve (_curva de capital): Detalles de la curva de capital de la estrategia.
+    
+    _trades (_operaciones): Detalles de las operaciones realizadas durante el período de análisis, incluyendo tamaño, entrada, salida, etc.
+    """
