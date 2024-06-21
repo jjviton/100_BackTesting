@@ -186,7 +186,7 @@ if __name__ == '__main__':
     elif (sys.argv[1]== 'USA'):
         print('Mercado Americano')
         telegram_send("USA Estrategia 10: LSTM")
-        tickers=  tickers_nasdaq #+ tickers_commodity
+        tickers=  tickers_nasdaq + tickers_commodity
     elif (sys.argv[1]== 'RUSSELL'):     
         telegram_send("RUSSELL Estrategia 10: LSTM")
         tickers= tickers_russell_2000
@@ -194,7 +194,7 @@ if __name__ == '__main__':
         
      #Probamos valores concretos para depurar
         
-    #tickers = ["NVDA", "PCAR","AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
+    tickers = ["NVDA"]       #, "PCAR","AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
      
     #test
     #Llamamos al constructor de la Clase
