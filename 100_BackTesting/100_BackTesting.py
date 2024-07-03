@@ -194,7 +194,7 @@ if __name__ == '__main__':
         
      #Probamos valores concretos para depurar
         
-    tickers = ["NVDA"]       #, "PCAR","AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
+    #tickers = ["PDD"]       #, "PCAR","AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
      
     #test
     #Llamamos al constructor de la Clase
@@ -412,7 +412,9 @@ if __name__ == '__main__':
                         if (cantidad > 0):
                             
                             cantidad = int (cantidad)   #convertir a valor entero de acciones a comprar
-                            orderID= alpacaAPI.placeOrder(instrumento_, cantidad)
+                            #orderID= alpacaAPI.placeOrder(instrumento_, cantidad)
+                            latest_ask_price, is_open= alpacaAPI.getLastQuote(instrumento_)
+                            orderID= alpacaAPI.placeBracketOrder( instrumento_ , cantidad, float (latest_ask_price+TP_), float (latest_ask_price-SL_))
                             #Anoto en carteta                            
                             nuevaPosicion ={'asset':instrumento_ , 'qty':cantidad,'buyPrice':dfpl['Close'].iloc[-1],'buyDay':dt.datetime.today(),
                                             'SL':SL_, 'TP':TP_, 'sellDay':'0', 'sellPrice':0, 'reason':'0'}
