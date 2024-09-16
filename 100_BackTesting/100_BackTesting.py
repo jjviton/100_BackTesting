@@ -40,9 +40,21 @@ import datetime as dt
 import importlib
 
 import sys
-sys.path.append("C:\\Users\\jjjimenez\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria")
-sys.path.append("C:/Users/jjjimenez/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM/")
-sys.path.append("C:/Users/jjjimenez/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/999_Automatic/999_Automatic")
+
+####################### LOGGING
+import logging    #https://docs.python.org/3/library/logging.html
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
+logging.basicConfig(filename='../log/registro.log', level=logging.WARNING ,force=True,
+                    format='%(asctime)s:%(levelname)s:%(message)s')
+logging.warning('Esto es una pruba backtesting.py')
+
+
+root_path ="C:\\Users\\INNOVACION\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria"
+
+sys.path.append("C:\\Users\\INNOVACION\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria")
+sys.path.append("C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM/")
+sys.path.append("C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/999_Automatic/999_Automatic")
 
 
 from eurostoxx import tickers_eurostoxx
@@ -53,8 +65,18 @@ from russell import tickers_russell_2000
 from comodities import tickers_commodity
 
 
-lstm = importlib.import_module("LSTM", "C:/Users/jjjimenez/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM")
-automatic = importlib.import_module("automatic", "C:/Users/jjjimenez/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/999_Automatic/999_Automatic")
+lstm = importlib.import_module("LSTM", "C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/10_LSTM/10_LSTM")
+automatic = importlib.import_module("automatic", "C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/999_Automatic/999_Automatic")
+
+
+
+def activarlog():
+    import logging    #https://docs.python.org/3/library/logging.html
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+    logging.basicConfig(filename='../log/registro_back.log', level=logging.INFO ,force=True,
+                        format='%(asctime)s:%(levelname)s:%(message)s')
+    logging.warning('esto es una pruba backtesting.py')
 
 
 
@@ -64,7 +86,7 @@ from backtesting.test import SMA, GOOG
 TELEGRAM__ = True
 ALPACA__ = True
 
-sys.path.insert(0,"C:\\Users\\jjjimenez\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria")
+sys.path.insert(0,"C:\\Users\\INNOVACION\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria")
 import quant_j3_lib as quant_j
 from telegram_bot import *
 
@@ -118,6 +140,7 @@ class MyStrat(Strategy):
         
         self.contador=0
         
+        #activarlog()
         
 #fin class        
         
@@ -162,17 +185,17 @@ def fun_estrategia():
     expentancy_=stat[25]    #en %
     return_=stat[6]         #en %
     winRate_=stat[18]
-    if(expentancy_>(0.6)and(winRate_>33)):   #and (return_>5)
+    if(expentancy_>(0.5)and(winRate_>33)):   #and (return_>5)
         return(True)
     return False
-
+    #return True  #para pruebas
 
 
 #/******************************** FUNCION PRINCIPAL main() *********/
 #     def main():   
 if __name__ == '__main__':   
 
-    telegram_send("__________________________v4 Feb2024 ")
+    telegram_send("__________________________v5 Sep2024 ")
 
 
     dias_a_futuro = 0
@@ -184,9 +207,9 @@ if __name__ == '__main__':
         telegram_send("EUROPA Estrategia 10: LSTM")
         tickers=  tickers_eurostoxx #+tickers_ibex 
     elif (sys.argv[1]== 'USA'):
-        print('Mercado Americano')
-        telegram_send("USA Estrategia 10: LSTM")
-        tickers=  tickers_nasdaq + tickers_commodity
+        print('Mercado Americano sep 2024')
+        telegram_send("USA Estrategia 10: LSTM 09/24")
+        tickers=  tickers_nasdaq #+ tickers_commodity
     elif (sys.argv[1]== 'RUSSELL'):     
         telegram_send("RUSSELL Estrategia 10: LSTM")
         tickers= tickers_russell_2000
@@ -194,7 +217,7 @@ if __name__ == '__main__':
         
      #Probamos valores concretos para depurar
         
-    #tickers = ["PDD"]       #, "PCAR","AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
+    #tickers = ["WDAY"]       #, "PCAR","AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
      
     #test
     #Llamamos al constructor de la Clase
@@ -205,7 +228,7 @@ if __name__ == '__main__':
     
         for jjj in range(0,len(tickers )): 
             instrumento_ =  tickers[jjj]
-            #instrumento_ = 'ALGN'
+            #instrumento_ = 'WDAY'
             telegram_ping()
             
             ###♥ Chequeo por si no hay datos
@@ -376,7 +399,7 @@ if __name__ == '__main__':
             """         
             
             ## Comunico TELEGRAM si hay señal hoy
-            if(TELEGRAM__):
+            if(TELEGRAM__ and estrategia):
                 print ("Pasando por Telegram/backtessting")
                 
                 if( (dfpl["signal"].iloc[-1] > 1) and  (estrategia==True)):
@@ -398,23 +421,29 @@ if __name__ == '__main__':
             ## Llamo a ALPACA para comprar
             ## Parametros Expectancy stat[25] >2  Return stat[6]>20   WinRate stat[18]>50
             
-            if(ALPACA__):
+            if(ALPACA__ and estrategia):
                 print ("Pasando por Alpaca")
                 
                 if( (dfpl["signal"].iloc[-1] > 1) and (estrategia==True)):
                     try:
+                        
+                        
+                        #### ESTRATEGIA ST//TP  Distinto de lo que hago en Bacttesting.
                         #Llamar al moneyManagement
                         TP_= ((dfpl["signal"].iloc[-1]*dfpl['Close'].iloc[-1])/100) 
-                        SL_=1*dfpl['ATR'].iloc[-1]
+                        SL_=5*dfpl['ATR'].iloc[-1]
+                        #SL_=dfpl['hull'].iloc[-1]     #Ojo que hull es valor de la accion no delta 
                         cantidad= alpacaAPI.moneyManag(instrumento_, TP_, SL_)
 
+                        
                         #Poner una orden
+                        
                         if (cantidad > 0):
                             
                             cantidad = int (cantidad)   #convertir a valor entero de acciones a comprar
                             #orderID= alpacaAPI.placeOrder(instrumento_, cantidad)
                             latest_ask_price, is_open= alpacaAPI.getLastQuote(instrumento_)
-                            orderID= alpacaAPI.placeBracketOrder( instrumento_ , cantidad, float (latest_ask_price+TP_), float (latest_ask_price-SL_))
+                            orderID= alpacaAPI.placeBracketOrder( instrumento_ , cantidad, float (latest_ask_price+TP_), float ( SL_))  #latest_ask_price-#
                             #Anoto en carteta                            
                             nuevaPosicion ={'asset':instrumento_ , 'qty':cantidad,'buyPrice':dfpl['Close'].iloc[-1],'buyDay':dt.datetime.today(),
                                             'SL':SL_, 'TP':TP_, 'sellDay':'0', 'sellPrice':0, 'reason':'0'}
@@ -424,15 +453,18 @@ if __name__ == '__main__':
                         
                         telegram_send("TP = " +str(round(TP_,1))
                                   +" SL= "+ str(round(SL_,1)) +" Cantidad = "+ str(cantidad))
-                    except:
-                        print("error ALPACA")
-                        telegram_send("error Alpaca try")
+                    
+                    except Exception as e:    
+                        print("error ....")
+                        telegram_send("error ....")
+                        print(e)
+                        logging.error(e)  
                         continue
 
             
             ##################  Excel con todos los valores
             print('borrar')
-            if (True or flag01== True):   #solo grabo el excel si hay señal buena
+            if ( flag01== True):   #solo grabo el excel si hay señal buena
                 flag01=False
                 file_path ="../reports/temp/0_becnchmark.xlsx"
                 try:
@@ -461,6 +493,9 @@ if __name__ == '__main__':
     print('This is it................ 7')
     telegram_send("This is it......")
     
+    #Cierro LOGGING    
+
+    logging.shutdown()
     
     """ Backtesting parameter
     
