@@ -45,9 +45,9 @@ import sys
 import logging    #https://docs.python.org/3/library/logging.html
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
-logging.basicConfig(filename='../log/registro.log', level=logging.WARNING ,force=True,
+logging.basicConfig(filename='../log/registroBackT.log', level=logging.WARNING ,force=True,
                     format='%(asctime)s:%(levelname)s:%(message)s')
-logging.warning('Esto es una pruba backtesting.py')
+#logging.warning('Esto es una pruba backtesting.py')
 
 
 root_path ="C:\\Users\\INNOVACION\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria"
@@ -140,9 +140,11 @@ class MyStrat(Strategy):
         
         self.contador=0
         
+        self.estrategia = 0
+        
         #activarlog()
         
-#fin class        
+      
         
 
     def next(self):
@@ -171,35 +173,52 @@ class MyStrat(Strategy):
             self.position.close()
         if(self.data.Close[-1] < 2*slatr):  #StopLoss    
             self.position.close()   
-            
+#fin class             
         
-
-def fun_estrategia():
+#*************************************************************************************************
+#*************************************************************************************************
+def fun_estrategia(estrat_):
     """
     DESCRIPTION.  Funcion propia mia nada que ver con el backtesting process. pero me sirve para aisla la estrategia
     ## Parametros Expectancy stat[25] >2  Return stat[6]>20   WinRate stat[18]>50
+    
+    Esta fucnion tambien configura la cuenta del Broker de Alpaca tenemos varias
         
     #(stat[25]>2) and (stat[6]>20) and(stat[18]>50) 
 
     """
-    expentancy_=stat[25]    #en %
-    return_=stat[6]         #en %
-    winRate_=stat[18]
-    if(expentancy_>(0.5)and(winRate_>33)):   #and (return_>5)
-        return(True)
-    return False
-    #return True  #para pruebas
+    if (estrat_ == 0):
+        expentancy_=stat[25]    #en %
+        return_=stat[6]         #en %
+        winRate_=stat[18]
+        if(expentancy_>(0.5)and(winRate_>33)):   #and (return_>5)
+            return(True)
+        return False
+        #return True  #para pruebas
+    
+    elif (estrat_ == 32):
+        
+        return (True)
+    
+    else:
+        return(False)
+
 
 
 #/******************************** FUNCION PRINCIPAL main() *********/
 #     def main():   
 if __name__ == '__main__':   
 
-    telegram_send("__________________________v5 Sep2024 ")
+    telegram_send("__________________________v6 Sep2024 ")
 
 
     dias_a_futuro = 0
     flag01= False
+    
+    estrategiaType =0
+    
+  
+    
     
     
     if (sys.argv[1]== 'EU'):
@@ -213,16 +232,21 @@ if __name__ == '__main__':
     elif (sys.argv[1]== 'RUSSELL'):     
         telegram_send("RUSSELL Estrategia 10: LSTM")
         tickers= tickers_russell_2000
-     
         
-     #Probamos valores concretos para depurar
+    if (sys.argv[2]== 'estrategia2'):
+         estrategiaType = 32
+    else: 
+         estrategiaType = 00
+
+        
+
+    #Llamamos al constructor de la Clase compraVenta con el ID de la cuenta
+    alpacaAPI= automatic.tradeAPIClass(para2=estrategiaType)  
+        
+    #Probamos valores concretos para depurar
         
     #tickers = ["WDAY"]       #, "PCAR","AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
      
-    #test
-    #Llamamos al constructor de la Clase
-    alpacaAPI= automatic.tradeAPIClass()    
-
     
     for dias_a_futuro in [3]:  #range(0,2):   Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
     
@@ -380,9 +404,11 @@ if __name__ == '__main__':
                      index=True,
                      )  #sheet_name=str(dias_a_futuro)
                 
-            #MARCO ESTRATEGIA EN REAL ES BUENA..
+            # MARCO ESTRATEGIA EN REAL ES BUENA..
             estrategia =False
-            estrategia= fun_estrategia()
+            estrategia= fun_estrategia(estrategiaType )
+            
+            
             if( estrategia ):       
                     #[6]=return [25]=expentace  [18]=winrate
                 estrategia =True
@@ -492,9 +518,10 @@ if __name__ == '__main__':
             print(stat._trades)
     print('This is it................ 7')
     telegram_send("This is it......")
+    telegram_send("Estrategia = " + str(estrategiaType))
     
     #Cierro LOGGING    
-
+    logging.warning('Ejecutado con exito')
     logging.shutdown()
     
     """ Backtesting parameter
