@@ -41,13 +41,7 @@ import importlib
 
 import sys
 
-####################### LOGGING
-import logging    #https://docs.python.org/3/library/logging.html
-for handler in logging.root.handlers[:]:
-    logging.root.removeHandler(handler)
-logging.basicConfig(filename='../log/registroBackT.log', level=logging.WARNING ,force=True,
-                    format='%(asctime)s:%(levelname)s:%(message)s')
-#logging.warning('Esto es una pruba backtesting.py')
+
 
 
 root_path ="C:\\Users\\INNOVACION\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\libreria"
@@ -70,13 +64,13 @@ automatic = importlib.import_module("automatic", "C:/Users/INNOVACION/Documents/
 
 
 
-def activarlog():
-    import logging    #https://docs.python.org/3/library/logging.html
-    for handler in logging.root.handlers[:]:
-        logging.root.removeHandler(handler)
-    logging.basicConfig(filename='../log/registro_back.log', level=logging.INFO ,force=True,
-                        format='%(asctime)s:%(levelname)s:%(message)s')
-    logging.warning('esto es una pruba backtesting.py')
+
+import logging    #https://docs.python.org/3/library/logging.html
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
+logging.basicConfig(filename='../log/registro_back_new.log', level=logging.INFO ,force=True,
+                    format='%(asctime)s:%(levelname)s:%(message)s')
+logging.warning('EEsto es una pruba backtesting.py')
 
 
 
@@ -142,7 +136,7 @@ class MyStrat(Strategy):
         
         self.estrategia = 0
         
-        #activarlog()
+
         
       
         
@@ -209,7 +203,7 @@ def fun_estrategia(estrat_):
 #     def main():   
 if __name__ == '__main__':   
 
-    telegram_send("__________________________v6 Sep2024 ")
+    telegram_send("__________________________v6 nov2024 ")
 
 
     dias_a_futuro = 0
@@ -217,7 +211,10 @@ if __name__ == '__main__':
     
     estrategiaType =0
     
-  
+    if (sys.argv[2]== 'estrategia2'):
+         estrategiaType = 32
+    else: 
+         estrategiaType = 00 
     
     
     
@@ -227,16 +224,13 @@ if __name__ == '__main__':
         tickers=  tickers_eurostoxx #+tickers_ibex 
     elif (sys.argv[1]== 'USA'):
         print('Mercado Americano sep 2024')
-        telegram_send("USA Estrategia 10: LSTM 09/24")
+        telegram_send("USA Estrategia: "+str(estrategiaType)+ "   LSTM 11/24")
         tickers=  tickers_nasdaq #+ tickers_commodity
     elif (sys.argv[1]== 'RUSSELL'):     
         telegram_send("RUSSELL Estrategia 10: LSTM")
         tickers= tickers_russell_2000
         
-    if (sys.argv[2]== 'estrategia2'):
-         estrategiaType = 32
-    else: 
-         estrategiaType = 00
+
 
         
 
@@ -245,14 +239,14 @@ if __name__ == '__main__':
         
     #Probamos valores concretos para depurar
         
-    #tickers = ["WDAY"]       #, "PCAR","AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
+    #tickers = ["AVGO","PANW"]       #, "PCAR","AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
      
     
     for dias_a_futuro in [3]:  #range(0,2):   Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
     
         for jjj in range(0,len(tickers )): 
             instrumento_ =  tickers[jjj]
-            #instrumento_ = 'WDAY'
+            #instrumento_ = 'PCAR'
             telegram_ping()
             
             ###♥ Chequeo por si no hay datos
@@ -264,7 +258,7 @@ if __name__ == '__main__':
                 
                 dfpl = yf.download(instrumento_,  fechaInicio_,fechaFin_ )
             except:
-                #logging.info('Ticker no existe'+instrumento_)
+                logging.warning('Ticker no existe  '+instrumento_)
                 continue
             if dfpl.empty:
                 continue
@@ -282,11 +276,15 @@ if __name__ == '__main__':
             #del pasado cercano fuera del modelo. 
             #Tendria que hacer backtesting con los datos de test y luego guardar los parametros
             
-            if (sys.argv[1]== 'RUSSELL'):    #no tengo modelo    
-                df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=False)
-            else:
-                df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True, fullDataSet=False)        
-            
+            try:
+                
+                if (sys.argv[1]== 'RUSSELL'):    #no tengo modelo    
+                    df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=False)
+                else:
+                    df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True, fullDataSet=False)        
+            except:
+                logging.error('Error al cargar trabajar con el modelo LSTM  '+instrumento_)
+                continue
             #df_signal=df_signal_hull['signal'] & df_signal_Close['signal']   #uno las señales
             #df_signal=df_signal.to_frame()
             #Finalmente solo aplicamos la estrategia close
@@ -342,8 +340,7 @@ if __name__ == '__main__':
             #############dfpl.to_csv("../temp/datos2.csv", index=True)
             #borro el dataframe
             #############del dfpl
-    
-            
+                
             #############dfpl = pd.read_csv("../temp/datos2.csv",dtype={'predi': float})
             
             #dfpl = df_signal[:].copy()
@@ -400,6 +397,7 @@ if __name__ == '__main__':
                      )
                 
             except:             #La primera ronda no existe el fichero
+                logging.error("K_7") 
                 df_new.to_excel(file_path, 
                      index=True,
                      )  #sheet_name=str(dias_a_futuro)
@@ -409,11 +407,17 @@ if __name__ == '__main__':
             estrategia= fun_estrategia(estrategiaType )
             
             
-            if( estrategia ):       
-                    #[6]=return [25]=expentace  [18]=winrate
-                estrategia =True
-                #cargo el modelo entrenado con todos los datos a ver que me dice para hoy
-                df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True, fullDataSet=True)     
+            if( estrategia ):   
+                try:
+                        #[6]=return [25]=expentace  [18]=winrate
+                    estrategia =True
+                    #cargo el modelo entrenado con todos los datos a ver que me dice para hoy
+                    df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True, fullDataSet=True)     
+                except:
+                    logging.error("myLSTM error")  
+                    continue
+                
+                    
                
             #Convertimos a html
             """
@@ -436,6 +440,7 @@ if __name__ == '__main__':
                         flag01=True
                     except:
                         print("error Telegram 4")
+                        logging.error("K_8") 
                         continue
                     
                     
@@ -508,6 +513,7 @@ if __name__ == '__main__':
                          )
                     
                 except:             #La primera ronda no existe el fichero
+                    logging.error("k_4") 
                     df_new.to_excel(file_path, 
                          index=True
                          )  #sheet_name=str(dias_a_futuro)            
@@ -517,12 +523,15 @@ if __name__ == '__main__':
             
             print(stat._trades)
     print('This is it................ 7')
-    telegram_send("This is it......")
     telegram_send("Estrategia = " + str(estrategiaType))
+    telegram_send("This is it......")
+
     
     #Cierro LOGGING    
     logging.warning('Ejecutado con exito')
     logging.shutdown()
+
+    sys.exit(2)    #me salgo para no ejecutar el resto del codigo.
     
     """ Backtesting parameter
     
