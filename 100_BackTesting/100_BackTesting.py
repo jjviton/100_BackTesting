@@ -69,8 +69,14 @@ import logging    #https://docs.python.org/3/library/logging.html
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
 logging.basicConfig(filename='../log/registro_back_new.log', level=logging.INFO ,force=True,
-                    format='%(asctime)s:%(levelname)s:%(message)s')
-logging.warning('EEsto es una pruba backtesting.py')
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+ 
+
+# Obtiene un logger específico para el módulo principal
+logger = logging.getLogger(__name__)
+logger.info('Inicio de la aplicación Backtesting')
+#logging.warning('Esto es una pruba backtesting.py')
 
 
 
@@ -203,7 +209,7 @@ def fun_estrategia(estrat_):
 #     def main():   
 if __name__ == '__main__':   
 
-    telegram_send("__________________________v6 nov2024 ")
+    telegram_send("__________________________v6 ene2025 ")
 
 
     dias_a_futuro = 0
@@ -212,9 +218,9 @@ if __name__ == '__main__':
     estrategiaType =0
     
     if (sys.argv[2]== 'estrategia2'):
-         estrategiaType = 32
+        estrategiaType = 32
     else: 
-         estrategiaType = 00 
+        estrategiaType = 00 
     
     
     
@@ -225,7 +231,7 @@ if __name__ == '__main__':
     elif (sys.argv[1]== 'USA'):
         print('Mercado Americano sep 2024')
         telegram_send("USA Estrategia: "+str(estrategiaType)+ "   LSTM 11/24")
-        tickers=  tickers_nasdaq #+ tickers_commodity
+        tickers=  tickers_sp500+tickers_nasdaq #+ tickers_commodity
     elif (sys.argv[1]== 'RUSSELL'):     
         telegram_send("RUSSELL Estrategia 10: LSTM")
         tickers= tickers_russell_2000
@@ -250,6 +256,7 @@ if __name__ == '__main__':
             telegram_ping()
             
             ###♥ Chequeo por si no hay datos
+            logger.warning('Instrumento  '+instrumento_)
             try: 
                 #################### PROBAMOS LA ESTRATEGIA
                 # Determino las fechas, que NO se han visto en training
@@ -258,7 +265,7 @@ if __name__ == '__main__':
                 
                 dfpl = yf.download(instrumento_,  fechaInicio_,fechaFin_ )
             except:
-                logging.warning('Ticker no existe  '+instrumento_)
+                logger.warning('Ticker no existe  '+instrumento_)
                 continue
             if dfpl.empty:
                 continue
@@ -270,7 +277,7 @@ if __name__ == '__main__':
             #myLSTMnet_4D_hull = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'hull')          #Creamos la clase
             #df_signal_hull, predi, prediDesplazado = myLSTMnet_4D_hull.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
             
-            myLSTMnet_4D_Close = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'Close')          #Creamos la clase
+            myLSTMnet_4D_Close = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'Close')          #Creamos el objeto de la clase lstm
             
             # Ojo que estoy haciendo el BACKTESTING con datos con los que he entrenado... pero a la vez no quiero dejar datos
             #del pasado cercano fuera del modelo. 
@@ -283,7 +290,7 @@ if __name__ == '__main__':
                 else:
                     df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True, fullDataSet=False)        
             except:
-                logging.error('Error al cargar trabajar con el modelo LSTM  '+instrumento_)
+                logger.error('Error al cargar trabajar con el modelo LSTM  '+instrumento_)
                 continue
             #df_signal=df_signal_hull['signal'] & df_signal_Close['signal']   #uno las señales
             #df_signal=df_signal.to_frame()
@@ -369,11 +376,14 @@ if __name__ == '__main__':
             stat = bt.run()
             print(stat)
             
-            backtesting.set_bokeh_output(notebook=False)
-            bt.plot(show_legend=True, plot_width=None, plot_equity=True, plot_return=False, 
-            plot_pl=True, plot_volume=True, plot_drawdown=False, smooth_equity=False, relative_equity=True, 
-            superimpose=True, resample=False, reverse_indicators=False, open_browser=False,
-            filename=("../reports/temp/"+instrumento_+"_"+str(dias_a_futuro)+"d_Close"+".html"))
+            
+            generar_graficos =False            
+            if (generar_graficos):
+                backtesting.set_bokeh_output(notebook=False)
+                bt.plot(show_legend=True, plot_width=None, plot_equity=True, plot_return=False, 
+                plot_pl=True, plot_volume=True, plot_drawdown=False, smooth_equity=False, relative_equity=True, 
+                superimpose=True, resample=False, reverse_indicators=False, open_browser=False,
+                filename=("../reports/temp/"+instrumento_+"_"+str(dias_a_futuro)+"d_Close"+".html"))
             
             
             #Salvo informacion Estadistica en html y/o excel
@@ -381,27 +391,28 @@ if __name__ == '__main__':
             df_new= stat.to_frame()
             df_new.rename(columns={0:instrumento_}, inplace=True)
             
+            """
             file_path ="../reports/temp/"+instrumento_+".xlsx"
             try:
                 df_existing = pd.DataFrame()  #columns=[dias_a_futuro])
                 df_existing= pd.read_excel(file_path, index_col=0)
                 
-                """
-                with pd.ExcelWriter(file_path, engine='openpyxl', mode='a') as writer:
+                
+                #with pd.ExcelWriter(file_path, engine='openpyxl', mode='a') as writer:
                         # agregar el nuevo DataFrame a una nueva hoja 
                         df_new.to_excel(writer, sheet_name=str(dias_a_futuro), index=False)
-                """
+                
                 df4= pd.concat([df_existing, df_new], axis=1)
                 df4.to_excel(file_path, 
                      index=True,
                      )
                 
             except:             #La primera ronda no existe el fichero
-                logging.error("K_7") 
+                logger.error("K_7") 
                 df_new.to_excel(file_path, 
                      index=True,
                      )  #sheet_name=str(dias_a_futuro)
-                
+            """    
             # MARCO ESTRATEGIA EN REAL ES BUENA..
             estrategia =False
             estrategia= fun_estrategia(estrategiaType )
@@ -414,7 +425,7 @@ if __name__ == '__main__':
                     #cargo el modelo entrenado con todos los datos a ver que me dice para hoy
                     df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True, fullDataSet=True)     
                 except:
-                    logging.error("myLSTM error")  
+                    logger.error("K_9")  
                     continue
                 
                     
@@ -439,8 +450,8 @@ if __name__ == '__main__':
                                   "\n % rampUp  " + str(round(dfpl["signal"].iloc[-1],2)))
                         flag01=True
                     except:
-                        print("error Telegram 4")
-                        logging.error("K_8") 
+                        print("error Telegram K_8")
+                        logger.error("K_8") 
                         continue
                     
                     
@@ -462,24 +473,50 @@ if __name__ == '__main__':
                         #### ESTRATEGIA ST//TP  Distinto de lo que hago en Bacttesting.
                         #Llamar al moneyManagement
                         TP_= ((dfpl["signal"].iloc[-1]*dfpl['Close'].iloc[-1])/100) 
-                        SL_=5*dfpl['ATR'].iloc[-1]
-                        #SL_=dfpl['hull'].iloc[-1]     #Ojo que hull es valor de la accion no delta 
+                        
+                        SL_=5*dfpl['ATR'].iloc[-1]      # Le doy un multiplo de 5 para dar 'espacio' al ATR
+                            #SL_=dfpl['hull'].iloc[-1]      # Ojo que hull es valor de la accion no delta 
                         cantidad= alpacaAPI.moneyManag(instrumento_, TP_, SL_)
 
                         
                         #Poner una orden
                         
                         if (cantidad > 0):
+                                
+                            if (estrat_ == 0):  # J3
+                                cantidad = int (cantidad)   #convertir a valor entero de acciones a comprar
+                                orderID= alpacaAPI.placeOrder(instrumento_, cantidad)
+                                #      latest_ask_price, is_open= alpacaAPI.getLastQuote(instrumento_)
+                                #      orderID= alpacaAPI.placeBracketOrder( instrumento_ , cantidad, float (latest_ask_price+TP_), float ( SL_))  #latest_ask_price-#
+                                
+                                
+                                
+                                #Anoto en carteta                            
+                                #nuevaPosicion ={'asset':instrumento_ , 'qty':cantidad,'buyPrice':dfpl['Close'].iloc[-1],'buyDay':dt.datetime.today(),
+                                #                'SL':SL_, 'TP':TP_, 'sellDay':'0', 'sellPrice':0, 'reason':'0'}
+                                #alpacaAPI.cartera202301 = alpacaAPI.cartera202301.append(nuevaPosicion, ignore_index=True)
+                                #alpacaAPI.actualizarCartera('cartera01', nuevaPosicion)   
+                                
+                                
                             
-                            cantidad = int (cantidad)   #convertir a valor entero de acciones a comprar
-                            orderID= alpacaAPI.placeOrder(instrumento_, cantidad)
-                            #      latest_ask_price, is_open= alpacaAPI.getLastQuote(instrumento_)
-                            #      orderID= alpacaAPI.placeBracketOrder( instrumento_ , cantidad, float (latest_ask_price+TP_), float ( SL_))  #latest_ask_price-#
-                            #Anoto en carteta                            
-                            nuevaPosicion ={'asset':instrumento_ , 'qty':cantidad,'buyPrice':dfpl['Close'].iloc[-1],'buyDay':dt.datetime.today(),
-                                            'SL':SL_, 'TP':TP_, 'sellDay':'0', 'sellPrice':0, 'reason':'0'}
-                            #alpacaAPI.cartera202301 = alpacaAPI.cartera202301.append(nuevaPosicion, ignore_index=True)
-                            alpacaAPI.actualizarCartera('cartera01', nuevaPosicion)                        
+                            elif (estrat_ == 32):  #ALBA
+                            
+                                cantidad = int (cantidad)   #convertir a valor entero de acciones a comprar
+                                #      orderID= alpacaAPI.placeOrder(instrumento_, cantidad)
+                                latest_ask_price, is_open= alpacaAPI.getLastQuote(instrumento_)
+                                orderID= alpacaAPI.placeBracketOrder( instrumento_ , cantidad, float (latest_ask_price+TP_), float ( SL_))  #latest_ask_price-#
+                                
+                                #Anoto en carteta                            
+                                #nuevaPosicion ={'asset':instrumento_ , 'qty':cantidad,'buyPrice':dfpl['Close'].iloc[-1],'buyDay':dt.datetime.today(),
+                                #                'SL':SL_, 'TP':TP_, 'sellDay':'0', 'sellPrice':0, 'reason':'0'}
+                                #alpacaAPI.cartera202301 = alpacaAPI.cartera202301.append(nuevaPosicion, ignore_index=True)
+                                #alpacaAPI.actualizarCartera('cartera01', nuevaPosicion)   
+                                
+                                
+                            
+                            else:
+                                pass                      
+                                                  
 
                         
                         telegram_send("TP = " +str(round(TP_,1))
@@ -489,11 +526,12 @@ if __name__ == '__main__':
                         print("error ....")
                         telegram_send("error ....")
                         print(e)
-                        logging.error(e)  
+                        logger.error(e+"K69")  
                         continue
 
             
             ##################  Excel con todos los valores
+            """
             print('borrar')
             if ( flag01== True):   #solo grabo el excel si hay señal buena
                 flag01=False
@@ -502,33 +540,35 @@ if __name__ == '__main__':
                     df_existing = pd.DataFrame() #columns=[instrumento_])
                     df_existing= pd.read_excel(file_path, index_col=0)
                     
-                    """
+                    ""
                     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a') as writer:
                             # agregar el nuevo DataFrame a una nueva hoja 
                             df_new.to_excel(writer, sheet_name=str(dias_a_futuro), index=False)
-                    """
+                    ""
                     df4= pd.concat([df_existing, df_new], axis=1)
                     df4.to_excel(file_path, 
                          index=True,
                          )
                     
                 except:             #La primera ronda no existe el fichero
-                    logging.error("k_4") 
+                    logger.error("k_4") 
                     df_new.to_excel(file_path, 
                          index=True
                          )  #sheet_name=str(dias_a_futuro)            
             
-            
+            """
             
             
             print(stat._trades)
+            del myLSTMnet_4D_Close    #Borro la clase para liberar memporia
     print('This is it................ 7')
     telegram_send("Estrategia = " + str(estrategiaType))
     telegram_send("This is it......")
 
     
     #Cierro LOGGING    
-    logging.warning('Ejecutado con exito')
+    logger.warning('Ejecutado con exito')
+    logger.error('Estrategia  '+str(estrategiaType))
     logging.shutdown()
 
     sys.exit(2)    #me salgo para no ejecutar el resto del codigo.
