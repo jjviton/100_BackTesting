@@ -191,7 +191,7 @@ def fun_estrategia(estrat_):
         expentancy_=stat[25]    #en %
         return_=stat[6]         #en %
         winRate_=stat[18]
-        if(expentancy_>(0.5)and(winRate_>33)):   #and (return_>5)
+        if(expentancy_>(0.6)and(winRate_>50)):   #and (return_>5)
             return(True)
         return False
         #return True  #para pruebas
@@ -205,11 +205,13 @@ def fun_estrategia(estrat_):
 
 
 
+
+
 #/******************************** FUNCION PRINCIPAL main() *********/
 #     def main():   
 if __name__ == '__main__':   
 
-    telegram_send("__________________________v6 ene2025 ")
+    telegram_send("__________________________v7 ene2025  ")
 
 
     dias_a_futuro = 0
@@ -230,8 +232,8 @@ if __name__ == '__main__':
         tickers=  tickers_eurostoxx #+tickers_ibex 
     elif (sys.argv[1]== 'USA'):
         print('Mercado Americano sep 2024')
-        telegram_send("USA Estrategia: "+str(estrategiaType)+ "   LSTM 11/24")
-        tickers=  tickers_sp500+tickers_nasdaq #+ tickers_commodity
+        telegram_send("USA Estrategia: "+str(estrategiaType)+ "  (32=M) LSTM 11/24 #### #### #### #### ")
+        tickers=  tickers_sp500 #+tickers_nasdaq #+ tickers_commodity
     elif (sys.argv[1]== 'RUSSELL'):     
         telegram_send("RUSSELL Estrategia 10: LSTM")
         tickers= tickers_russell_2000
@@ -245,7 +247,7 @@ if __name__ == '__main__':
         
     #Probamos valores concretos para depurar
         
-    #tickers = ["AVGO","PANW"]       #, "PCAR","AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
+    #tickers = ["ISRG","JNPR"]       #, "PCAR","AMD","ALGN","AMGN","AVGO","INTC","NXPI","SIRI"]
      
     
     for dias_a_futuro in [3]:  #range(0,2):   Pongo tres dias para estar en sintonia con la estrategia de subida en tres dias
@@ -256,7 +258,7 @@ if __name__ == '__main__':
             telegram_ping()
             
             ###♥ Chequeo por si no hay datos
-            logger.warning('Instrumento  '+instrumento_)
+            logger.warning('[81]Instrumento  '+instrumento_)
             try: 
                 #################### PROBAMOS LA ESTRATEGIA
                 # Determino las fechas, que NO se han visto en training
@@ -265,7 +267,7 @@ if __name__ == '__main__':
                 
                 dfpl = yf.download(instrumento_,  fechaInicio_,fechaFin_ )
             except:
-                logger.warning('Ticker no existe  '+instrumento_)
+                logger.warning('[83]Ticker no existe  '+instrumento_)
                 continue
             if dfpl.empty:
                 continue
@@ -277,7 +279,11 @@ if __name__ == '__main__':
             #myLSTMnet_4D_hull = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'hull')          #Creamos la clase
             #df_signal_hull, predi, prediDesplazado = myLSTMnet_4D_hull.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
             
-            myLSTMnet_4D_Close = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'Close')          #Creamos el objeto de la clase lstm
+            try: 
+                myLSTMnet_4D_Close = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'Close')          #Creamos el objeto de la clase lstm
+            except:
+                logger.error('Error 88 Al crear el objeto LSTM para el instrumento '+instrumento_)
+                continue
             
             # Ojo que estoy haciendo el BACKTESTING con datos con los que he entrenado... pero a la vez no quiero dejar datos
             #del pasado cercano fuera del modelo. 
@@ -377,6 +383,7 @@ if __name__ == '__main__':
             print(stat)
             
             
+            # esta fucnion Grafica los valores y el resutlado del backTesting... La quito por temas de memoria
             generar_graficos =False            
             if (generar_graficos):
                 backtesting.set_bokeh_output(notebook=False)
@@ -474,17 +481,20 @@ if __name__ == '__main__':
                         #Llamar al moneyManagement
                         TP_= ((dfpl["signal"].iloc[-1]*dfpl['Close'].iloc[-1])/100) 
                         
-                        SL_=5*dfpl['ATR'].iloc[-1]      # Le doy un multiplo de 5 para dar 'espacio' al ATR
+                        SL_=5*dfpl['ATR'].iloc[-1]           # Le doy un multiplo de 5 para dar 'espacio' al ATR
                             #SL_=dfpl['hull'].iloc[-1]      # Ojo que hull es valor de la accion no delta 
                         cantidad= alpacaAPI.moneyManag(instrumento_, TP_, SL_)
 
                         
                         #Poner una orden
+                        latest_ask_price=00
                         
                         if (cantidad > 0):
                                 
-                            if (estrat_ == 0):  # J3
+                            if (estrategiaType == 0):  # J3
                                 cantidad = int (cantidad)   #convertir a valor entero de acciones a comprar
+                                latest_ask_price, is_open= alpacaAPI.getLastQuote(instrumento_)
+                                
                                 orderID= alpacaAPI.placeOrder(instrumento_, cantidad)
                                 #      latest_ask_price, is_open= alpacaAPI.getLastQuote(instrumento_)
                                 #      orderID= alpacaAPI.placeBracketOrder( instrumento_ , cantidad, float (latest_ask_price+TP_), float ( SL_))  #latest_ask_price-#
@@ -499,12 +509,12 @@ if __name__ == '__main__':
                                 
                                 
                             
-                            elif (estrat_ == 32):  #ALBA
+                            elif (estrategiaType == 32):  #ALBA
                             
                                 cantidad = int (cantidad)   #convertir a valor entero de acciones a comprar
                                 #      orderID= alpacaAPI.placeOrder(instrumento_, cantidad)
                                 latest_ask_price, is_open= alpacaAPI.getLastQuote(instrumento_)
-                                orderID= alpacaAPI.placeBracketOrder( instrumento_ , cantidad, float (latest_ask_price+TP_), float ( SL_))  #latest_ask_price-#
+                                orderID= alpacaAPI.placeBracketOrder( instrumento_ , cantidad, float (latest_ask_price+TP_), float ( latest_ask_price+ - SL_))  #latest_ask_price-#
                                 
                                 #Anoto en carteta                            
                                 #nuevaPosicion ={'asset':instrumento_ , 'qty':cantidad,'buyPrice':dfpl['Close'].iloc[-1],'buyDay':dt.datetime.today(),
@@ -520,13 +530,14 @@ if __name__ == '__main__':
 
                         
                         telegram_send("TP = " +str(round(TP_,1))
-                                  +" SL= "+ str(round(SL_,1)) +" Cantidad = "+ str(cantidad))
+                                  +" SL= "+ str(round(SL_,1)) +" Cantidad = "+ str(cantidad)
+                                  + " Price: "+ str(latest_ask_price))
                     
                     except Exception as e:    
-                        print("error ....")
-                        telegram_send("error ....")
+                        print("error ALpaca ....")
+                        telegram_send("error Alpaca .... k69")
                         print(e)
-                        logger.error(e+"K69")  
+                        logger.error(str(e) +" ALpaca K69")  
                         continue
 
             
@@ -561,6 +572,7 @@ if __name__ == '__main__':
             
             print(stat._trades)
             del myLSTMnet_4D_Close    #Borro la clase para liberar memporia
+            
     print('This is it................ 7')
     telegram_send("Estrategia = " + str(estrategiaType))
     telegram_send("This is it......")
@@ -568,7 +580,7 @@ if __name__ == '__main__':
     
     #Cierro LOGGING    
     logger.warning('Ejecutado con exito')
-    logger.error('Estrategia  '+str(estrategiaType))
+    logger.error('Estrategia  '+str(estrategiaType) + '  acabado correctamente'  )
     logging.shutdown()
 
     sys.exit(2)    #me salgo para no ejecutar el resto del codigo.
