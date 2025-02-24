@@ -322,10 +322,15 @@ if __name__ == '__main__':
                 continue
             """
                 
-            dfpl['signal']=1
-            dfpl["signal"].iloc[-200:]=df_signal['signal'].iloc[-200:].copy()
-            dfpl['predi']=1
-            dfpl['prediDesplazado']=1
+            dfpl['signal']=1.0
+            dfpl["signal"] = dfpl["signal"].astype("float64")  # Forzar el tipo si es necesario
+            
+            dfpl.iloc[-200:, dfpl.columns.get_loc("signal")] = df_signal.iloc[-200:, df_signal.columns.get_loc("signal")].copy()    #corregido!!!
+            
+            dfpl['predi']=1.0
+            dfpl["predi"] = dfpl["predi"].astype("float64")  # Asegura que "predi" pueda contener NaN
+            dfpl['prediDesplazado']=1.0
+            dfpl["prediDesplazado"] = dfpl["prediDesplazado"].astype("float64") 
             
             df_predi = pd.DataFrame(predi, columns=['X_dias'])
             df_predi.fillna(0, inplace=True)
@@ -333,16 +338,29 @@ if __name__ == '__main__':
             df_prediDesplazado = pd.DataFrame(prediDesplazado, columns=['X_dias'])
             df_prediDesplazado.fillna(0, inplace=True)        
             
-            dfpl["predi"].iloc[-200:]=df_predi['X_dias'].iloc[-200:].copy()
-            dfpl["prediDesplazado"].iloc[-200:]=df_prediDesplazado['X_dias'].iloc[-200-dias_a_futuro:-dias_a_futuro].copy()
+            #dfpl["predi"].loc[-200:]=df_predi['X_dias'].loc[-200:].copy()
             
-            dfpl['hull']=1
-            dfpl["hull"].iloc[-200:]=dfpl_a['hull'].iloc[-200:]
+            
+            
+            #dfpl.loc[dfpl.index[-200:], "predi"] = df_predi.loc[df_predi.index[-200:], "X_dias"].copy()
+            dfpl.iloc[-200:, dfpl.columns.get_loc("predi")] = df_predi.iloc[-200:, df_predi.columns.get_loc("X_dias")].copy()
+
+
+            
+            #dfpl["prediDesplazado"].iloc[-200:]=df_prediDesplazado['X_dias'].iloc[-200-dias_a_futuro:-dias_a_futuro].copy()
+            dfpl.iloc[-200:, dfpl.columns.get_loc("prediDesplazado")] = df_prediDesplazado.iloc[-200-dias_a_futuro:-dias_a_futuro, df_prediDesplazado.columns.get_loc("X_dias")].copy()
+
+            
+            dfpl['hull'] = 0.0  # Inicializa con ceros como float
+            dfpl['hull'] = dfpl['hull'].astype("float64")
+            #dfpl["hull"].loc[-200:]=dfpl_a['hull'].loc[-200:]
+            dfpl.iloc[-200:, dfpl.columns.get_loc("hull")] = dfpl_a.iloc[-200:, dfpl_a.columns.get_loc("hull")].copy()
             
             #Me traigo unos datos del dataFrame originial de la clase LSTM
-            
-            dfpl['Cclose']=1
-            dfpl["Cclose"].iloc[-200:]=myLSTMnet_4D_Close.dfx['Close'].iloc[-200:]
+
+            dfpl['Cclose'] = 1
+            dfpl.iloc[-200:, dfpl.columns.get_loc("Cclose")] = myLSTMnet_4D_Close.dfx.iloc[-200:, myLSTMnet_4D_Close.dfx.columns.get_loc("Close")].copy()
+
             
             
             
