@@ -41,6 +41,7 @@ import importlib
 
 import sys
 
+pd.set_option('future.no_silent_downcasting', True)   #no se muy bien lo que hace pero quita errores
 
 
 
@@ -188,9 +189,9 @@ def fun_estrategia(estrat_):
 
     """
     if (estrat_ == 0):
-        expentancy_=stat[25]    #en %
-        return_=stat[6]         #en %
-        winRate_=stat[18]
+        expentancy_=stat[27]    #en %
+        return_=stat[7]         #en %
+        winRate_=stat[20]
         if(expentancy_>(0.6)and(winRate_>50)):   #and (return_>5)
             return(True)
         return False
@@ -266,6 +267,7 @@ if __name__ == '__main__':
                 fechaFin_ = dt.datetime.today()  #- dt.timedelta(days=1)    #dt.datetime(2023,2,21)
                 
                 dfpl = yf.download(instrumento_,  fechaInicio_,fechaFin_ )
+                dfpl.columns = dfpl.columns.droplevel(1)
             except:
                 logger.warning('[83]Ticker no existe  '+instrumento_)
                 continue
@@ -445,7 +447,7 @@ if __name__ == '__main__':
             
             if( estrategia ):   
                 try:
-                        #[6]=return [25]=expentace  [18]=winrate
+                        
                     estrategia =True
                     #cargo el modelo entrenado con todos los datos a ver que me dice para hoy
                     df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True, fullDataSet=True)     
@@ -471,7 +473,7 @@ if __name__ == '__main__':
                 if( (dfpl["signal"].iloc[-1] > 1) and  (estrategia==True)):
                     try:
                         telegram_send("Señal Estrategia 10 LSTM v2\n(IN)" +instrumento_
-                                  +" Exp="+ str(round(stat[25], 1))+" Ret="+ str(round(stat[6], 1))  +" Win="+ str(round(stat[18], 1))+
+                                  +" Exp="+ str(round(stat[27], 1))+" Ret="+ str(round(stat[7], 1))  +" Win="+ str(round(stat[20], 1))+
                                   "\n % rampUp  " + str(round(dfpl["signal"].iloc[-1],2)))
                         flag01=True
                     except:
@@ -491,6 +493,7 @@ if __name__ == '__main__':
             if(ALPACA__ and estrategia):
                 print ("Pasando por Alpaca")
                 
+                #dfpl["signal"].iloc[-1]=2
                 if( (dfpl["signal"].iloc[-1] > 1) and (estrategia==True)):
                     try:
                         
