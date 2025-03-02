@@ -153,6 +153,9 @@ class MyStrat(Strategy):
         Descripcion: recorre cada fila una a una, evalua el criterio y decide Buy/Sell en el siguente paso
         Va a recorreer row by row los Indicadores declarados en el metodo I en el init(()) de la clase.
         
+        Para poder determinar unos parametros de backtesting, soy generoso con las entradas para calcular las estadisticas
+        Luego en simulado contra el broker soy más exigente. Pero esto me permite hacer un filtro.
+        
             
         """         
         super().next()
@@ -162,7 +165,7 @@ class MyStrat(Strategy):
         TPSLRatio = 1.2*TPSL_Ratio
         
         ## Logia de la estrategia
-        if self.signal1>1: #and len(self.trades)<=2:   
+        if self.signal1>0.3: #and len(self.trades)<=2:   #Sube mas de un 0,5%
             """
             sl1 = self.data.Close[-1] - 2*slatr
             tp1 = self.data.Close[-1] + 2*slatr*TPSLRatio            
@@ -189,9 +192,9 @@ def fun_estrategia(estrat_):
 
     """
     if (estrat_ == 0):
-        expentancy_=stat[27]    #en %
-        return_=stat[7]         #en %
-        winRate_=stat[20]
+        expentancy_=stat[27]    #en %  ganancias por cada 100 €invertidos
+        return_=stat[7]         #en %  El rendimiento total de la estrategia durante el período de análisis
+        winRate_=stat[20]       #en %  El porcentaje de operaciones ganadoras sobre el total de operaciones realizadas.
         if(expentancy_>(0.6)and(winRate_>50)):   #and (return_>5)
             return(True)
         return False
@@ -268,6 +271,7 @@ if __name__ == '__main__':
                 
                 dfpl = yf.download(instrumento_,  fechaInicio_,fechaFin_ )
                 dfpl.columns = dfpl.columns.droplevel(1)
+                dfpl_reset = dfpl.reset_index(drop=True, inplace=True)
             except:
                 logger.warning('[83]Ticker no existe  '+instrumento_)
                 continue
@@ -381,18 +385,31 @@ if __name__ == '__main__':
             def SIGNAL():
                 return dfpl.signal[-200:]
             def HULL():
-                dfpl['hull'].iloc[-200:-194]=dfpl['hull'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+                #dfpl['hull'].iloc[-200:-194]=dfpl['hull'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+                dfpl.loc[-200:-194, 'hull'] = dfpl.loc[-190:-184, 'hull']
                 return dfpl.hull[-200:]
+            
             def PREDI(): 
-                dfpl['predi'].iloc[-200:-194]=dfpl['predi'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
-                return dfpl.predi[-200:]
+                #dfpl['predi'].iloc[-200:-194]=dfpl['predi'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+                #return dfpl.predi[-200:]
+                dfpl.loc[-200:-194, 'predi'] = dfpl.loc[-190:-184, 'predi']  # Actualizar los valores
+                return dfpl['predi'][-200:]  # Retornar los últimos 200 valores
+            
             def PREDI_DES(): 
-                dfpl['prediDesplazado'].iloc[-200:-194]=dfpl['prediDesplazado'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
-                return dfpl.prediDesplazado[-200:]
-            def CLOSE_Original(): 
-                dfpl['Cclose'].iloc[-200:-194]=dfpl['Cclose'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+                #dfpl['prediDesplazado'].iloc[-200:-194]=dfpl['prediDesplazado'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+                #return dfpl.prediDesplazado[-200:]
+
+                dfpl.loc[-200:-194, 'prediDesplazado'] = dfpl.loc[-190:-184, 'prediDesplazado']  # Actualizar los valores
+                return dfpl['prediDesplazado'][-200:]  # Retornar los últimos 200 valores
+
                 
-                return dfpl.Cclose[-200:]
+            def CLOSE_Original(): 
+                #dfpl['Cclose'].iloc[-200:-194]=dfpl['Cclose'].iloc[-190:-184]  #Mejorable muuucho estos primeros valores
+                #return dfpl.Cclose[-200:]
+            
+                dfpl.loc[-200:-194, 'Cclose'] = dfpl.loc[-190:-184, 'Cclose']  # Actualizar los valores
+                return dfpl['Cclose'][-200:]  # Retornar los últimos 200 valores
+            
             
             dfpl['ATR'] = ta.atr(high = dfpl.High, low = dfpl.Low, close = dfpl.Close, length = 16)
             dfpl.dropna(inplace=True)
@@ -404,13 +421,14 @@ if __name__ == '__main__':
             
             
             # esta fucnion Grafica los valores y el resutlado del backTesting... La quito por temas de memoria
-            generar_graficos =False            
+            generar_graficos =True            
             if (generar_graficos):
                 backtesting.set_bokeh_output(notebook=False)
                 bt.plot(show_legend=True, plot_width=None, plot_equity=True, plot_return=False, 
                 plot_pl=True, plot_volume=True, plot_drawdown=False, smooth_equity=False, relative_equity=True, 
-                superimpose=True, resample=False, reverse_indicators=False, open_browser=False,
-                filename=("../reports/temp/"+instrumento_+"_"+str(dias_a_futuro)+"d_Close"+".html"))
+                superimpose=False, resample=False, reverse_indicators=False, open_browser=False,
+                filename=("C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/100_BackTesting/reports/temp/"
+                          +instrumento_+"_"+str(dias_a_futuro)+"d_Close"+".html"))
             
             
             #Salvo informacion Estadistica en html y/o excel
