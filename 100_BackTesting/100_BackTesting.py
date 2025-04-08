@@ -9,7 +9,7 @@
 Aplicacion que ejecuta Backtesting para una estrategia dada. Esta es la base 
 para probar cualquier estrategia. En mejora continua
 
-Scheduler: esta progrmada para poder ejecutarse con el schedular de windows.
+Scheduler: esta programada para poder ejecutarse con el schedular de windows.
 Lanzamos una tarea al fichero cierre???.bat y paramos como parametro USA/EU
 para segun la hora analizar un mercado u otro.
  
@@ -69,7 +69,7 @@ automatic = importlib.import_module("automatic", "C:/Users/INNOVACION/Documents/
 import logging    #https://docs.python.org/3/library/logging.html
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
-logging.basicConfig(filename='../log/registro_back_new.log', level=logging.INFO ,force=True,
+logging.basicConfig(filename='C:\\Users\\INNOVACION\\Documents\\J3\\100.- cursos\\Quant_udemy\\programas\\Projects\\100_BackTesting\\log\\registro_back_new.log', level=logging.INFO ,force=True,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
  
@@ -121,8 +121,7 @@ class MyStrat(Strategy):
     a -- 
     
     """       
-    
-    
+     
     mysize = 0.5  #creo que cuando compra, invierte la mitad de lo que tenemos
     def init(self):
         """
@@ -134,18 +133,14 @@ class MyStrat(Strategy):
         super().init()
         self.signal1 = self.I(SIGNAL) 
         #self.rsi= self.I(talib.RSI, self.data.close, 14)  # llama a la fucnion RSI con los parametros
-        self.predi= self.I(PREDI,overlay=True)
-        self.predi= self.I(PREDI_DES,overlay=True)
+        #self.predi= self.I(PREDI,overlay=True)
+        self.predi_des= self.I(PREDI_DES,overlay=True)
         self.hull= self.I(HULL,overlay=True)
         self.Cclose= self.I(CLOSE_Original,overlay=True)
         
         self.contador=0
         
         self.estrategia = 0
-        
-
-        
-      
         
 
     def next(self):
@@ -166,18 +161,37 @@ class MyStrat(Strategy):
         
         ## Logia de la estrategia
         if self.signal1>0.3: #and len(self.trades)<=2:   #Sube mas de un 0,5%
-            """
-            sl1 = self.data.Close[-1] - 2*slatr
-            tp1 = self.data.Close[-1] + 2*slatr*TPSLRatio            
-            self.buy(sl=sl1, tp=tp1, size=self.mysize)
-            """
-            self.buy()
-            
+            if (self.data.hull[-2] < self.data.hull[-1] ):    #hull subinedo
+        
+                """
+                sl1 = self.data.Close[-1] - 2*slatr
+                tp1 = self.data.Close[-1] + 2*slatr*TPSLRatio            
+                self.buy(sl=sl1, tp=tp1, size=self.mysize)
+                """
+                self.buy()
+
+        #Subió ayer con referencia antes de ayer
+        if (self.data.Close[-1] > self.data.Close[-2]):
+            return
+        #Ayer subio no vendo, aunque no subiera con referencia a antes de ayer
+        if ((self.data.Close[-1] > self.data.Open[-1] )):
+            return            
+        
+        if ((self.signal1[-2] < self.signal1[-1] )): #si señal se mantiene NO vendo
+            return            
+        
+        
+        self.position.close()
+                
+        """    
         if (self.data.hull[-1] < self.data.hull[-2] ): 
             self.position.close()
         if(self.data.Close[-1] < 2*slatr):  #StopLoss    
-            self.position.close()   
-#fin class             
+            self.position.close()  
+        """     
+    
+#fin clase MyStrat()
+
         
 #*************************************************************************************************
 #*************************************************************************************************
@@ -189,20 +203,63 @@ def fun_estrategia(estrat_):
     Esta fucnion tambien configura la cuenta del Broker de Alpaca tenemos varias
         
     #(stat[25]>2) and (stat[6]>20) and(stat[18]>50) 
-
+    
+    
+    Mejora: me parece que el orden de los elementos en stat esta variando. COmo es una seri mejor acceder por el 'indice'
+    
+      Start                                   148.0
+      End                                     347.0
+      Duration                                199.0
+      Exposure Time [%]                        33.5
+      Equity Final [$]                 107274.89125
+      Equity Peak [$]                  107375.53355
+      Commissions [$]                    4230.49075
+      Return [%]                            7.27489
+      Buy & Hold Return [%]                  -1.544
+      Return (Ann.) [%]                         0.0
+      Volatility (Ann.) [%]                     NaN
+      Sharpe Ratio                              NaN
+      Sortino Ratio                             NaN
+      Calmar Ratio                              0.0
+      Max. Drawdown [%]                    -6.99659
+      Avg. Drawdown [%]                    -2.18352
+      Max. Drawdown Duration                  152.0
+      Avg. Drawdown Duration               27.83333
+      # Trades                                 21.0
+      Win Rate [%]                         52.38095
+      Best Trade [%]                        3.34456
+      Worst Trade [%]                      -1.62037
+      Avg. Trade [%]                        0.41361
+      Max. Trade Duration                      16.0
+      Avg. Trade Duration                   2.85714
+      Profit Factor                          2.2958
+      Expectancy [%]                        0.42242
+      SQN                                   1.40264
+      Kelly Criterion                       0.29357
+      _strategy                             MyStrat
+      _equity_curve                        Equit...
+      _trades                       Size  EntryB...  
+        
+        
     """
+    
+    expentancy_=stat[26]    #en %  ganancias por cada 100 €invertidos
+    return_=stat[7]         #en %  El rendimiento total de la estrategia durante el período de análisis
+    winRate_=stat[19]       #en %  El porcentaje de operaciones ganadoras sobre el total de 
+    profitFactor_=stat[25]
+    
     if (estrat_ == 0):
-        expentancy_=stat[27]    #en %  ganancias por cada 100 €invertidos
-        return_=stat[7]         #en %  El rendimiento total de la estrategia durante el período de análisis
-        winRate_=stat[20]       #en %  El porcentaje de operaciones ganadoras sobre el total de operaciones realizadas.
-        if(expentancy_>(0.6)and(winRate_>50)):   #and (return_>5)
+                            #operaciones realizadas.
+        if(expentancy_>(4)and(winRate_>40)):   #and (return_>5)
             return(True)
         return False
         #return True  #para pruebas
     
     elif (estrat_ == 32):
+        if((winRate_>40) and (expentancy_ >1) and (profitFactor_>1.5)):
+            return(True)
         
-        return (True)
+        return (False)
     
     else:
         return(False)
@@ -223,7 +280,7 @@ if __name__ == '__main__':
     
     estrategiaType =0
     
-    if (sys.argv[2]== 'estrategia2'):
+    if (sys.argv[2]== 'estrategia2'):    #32=M
         estrategiaType = 32
     else: 
         estrategiaType = 00 
@@ -298,9 +355,11 @@ if __name__ == '__main__':
             try:
                 
                 if (sys.argv[1]== 'RUSSELL'):    #no tengo modelo    
-                    df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=False)
+                    df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, 
+                                                                                                    produccion_=False)
                 else:
-                    df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True, fullDataSet=False)        
+                    df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, 
+                                                                                                    produccion_=True, fullDataSet=False)        
             except:
                 logger.error('Error al cargar trabajar con el modelo LSTM  '+instrumento_)
                 continue
@@ -382,6 +441,7 @@ if __name__ == '__main__':
             
             #dfpl = df_signal[:].copy()
             #CREO MIS INDICADORES
+            """
             def SIGNAL():
                 return dfpl.signal[-200:]
             def HULL():
@@ -409,6 +469,29 @@ if __name__ == '__main__':
             
                 dfpl.loc[-200:-194, 'Cclose'] = dfpl.loc[-190:-184, 'Cclose']  # Actualizar los valores
                 return dfpl['Cclose'][-200:]  # Retornar los últimos 200 valores
+            """
+                        
+            # Creación de los indicadores
+            def SIGNAL():
+                return dfpl['signal'][-200:]
+            
+            def HULL():
+                dfpl.loc[dfpl.index[-200:-194], 'hull'] = dfpl.loc[dfpl.index[-190:-184], 'hull']
+                return dfpl['hull'][-200:]
+            
+            """
+            def PREDI(): 
+                dfpl.loc[dfpl.index[-200:-194], 'predi'] = dfpl.loc[dfpl.index[-190:-184], 'predi']
+                return dfpl['predi'][-200:]
+            """
+            
+            def PREDI_DES(): 
+                dfpl.loc[dfpl.index[-200:-194], 'prediDesplazado'] = dfpl.loc[dfpl.index[-190:-184], 'prediDesplazado']
+                return dfpl['prediDesplazado'][-200:]
+            
+            def CLOSE_Original(): 
+                dfpl.loc[dfpl.index[-200:-194], 'Cclose'] = dfpl.loc[dfpl.index[-190:-184], 'Cclose']
+                return dfpl['Cclose'][-200:]
             
             
             dfpl['ATR'] = ta.atr(high = dfpl.High, low = dfpl.Low, close = dfpl.Close, length = 16)
@@ -436,16 +519,17 @@ if __name__ == '__main__':
             df_new= stat.to_frame()
             df_new.rename(columns={0:instrumento_}, inplace=True)
             
-            """
-            file_path ="../reports/temp/"+instrumento_+".xlsx"
+            
+            file_path =("C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/100_BackTesting/reports/temp/"
+                    +instrumento_+".xlsx")
             try:
                 df_existing = pd.DataFrame()  #columns=[dias_a_futuro])
                 df_existing= pd.read_excel(file_path, index_col=0)
                 
                 
                 #with pd.ExcelWriter(file_path, engine='openpyxl', mode='a') as writer:
-                        # agregar el nuevo DataFrame a una nueva hoja 
-                        df_new.to_excel(writer, sheet_name=str(dias_a_futuro), index=False)
+                # agregar el nuevo DataFrame a una nueva hoja 
+                df_new.to_excel(writer, sheet_name=str(dias_a_futuro), index=False)
                 
                 df4= pd.concat([df_existing, df_new], axis=1)
                 df4.to_excel(file_path, 
@@ -457,18 +541,21 @@ if __name__ == '__main__':
                 df_new.to_excel(file_path, 
                      index=True,
                      )  #sheet_name=str(dias_a_futuro)
-            """    
+                
             # MARCO ESTRATEGIA EN REAL ES BUENA..
             estrategia =False
             estrategia= fun_estrategia(estrategiaType )
             
+            
+            #estrategia =False   # CON ESTA INSTRUCCION PARO LAS COMPRAS!!!!
             
             if( estrategia ):   
                 try:
                         
                     estrategia =True
                     #cargo el modelo entrenado con todos los datos a ver que me dice para hoy
-                    df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, produccion_=True, fullDataSet=True)     
+                    df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, 
+                                                                                                    produccion_=True, fullDataSet=True)     
                 except:
                     logger.error("K_9")  
                     continue
@@ -581,11 +668,18 @@ if __name__ == '__main__':
 
             
             ##################  Excel con todos los valores
-            """
+            
             print('borrar')
-            if ( flag01== True):   #solo grabo el excel si hay señal buena
-                flag01=False
-                file_path ="../reports/temp/0_becnchmark.xlsx"
+            if (( estrategia== True) or True ):   #solo grabo el excel si hay señal buena
+                #flag01=False
+                
+                if (estrategiaType == 00):
+                    file_path ="C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/100_BackTesting/reports/temp/0_becnchmark_00.xlsx"
+                    
+                elif (estrategiaType == 32):
+                    file_path ="C:/Users/INNOVACION/Documents/J3/100.- cursos/Quant_udemy/programas/Projects/100_BackTesting/reports/temp/0_becnchmark_32.xlsx"
+                    
+                    
                 try:
                     df_existing = pd.DataFrame() #columns=[instrumento_])
                     df_existing= pd.read_excel(file_path, index_col=0)
@@ -606,7 +700,7 @@ if __name__ == '__main__':
                          index=True
                          )  #sheet_name=str(dias_a_futuro)            
             
-            """
+            
             
             
             print(stat._trades)
