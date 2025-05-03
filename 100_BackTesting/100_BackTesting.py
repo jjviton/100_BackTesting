@@ -243,20 +243,20 @@ def fun_estrategia(estrat_):
         
     """
     
-    expentancy_=stat[26]    #en %  ganancias por cada 100 €invertidos
+    expentancy_=stat[26]    #en %  ganancias por cada 100 €invertidos  ESPERANZA MATEMATICA
     return_=stat[7]         #en %  El rendimiento total de la estrategia durante el período de análisis
     winRate_=stat[19]       #en %  El porcentaje de operaciones ganadoras sobre el total de 
     profitFactor_=stat[25]
     
     if (estrat_ == 0):
                             #operaciones realizadas.
-        if(expentancy_>(4)and(winRate_>40)):   #and (return_>5)
+        if(expentancy_>(1.75)):   #and (return_>5)
             return(True)
         return False
         #return True  #para pruebas
     
     elif (estrat_ == 32):
-        if((winRate_>40) and (expentancy_ >1) and (profitFactor_>1.5)):
+        if((winRate_>40) and (expentancy_ >0.75) and (profitFactor_>1.5)):
             return(True)
         
         return (False)
@@ -280,9 +280,9 @@ if __name__ == '__main__':
     
     estrategiaType =0
     
-    if (sys.argv[2]== 'estrategia2'):    #32=M
+    if (sys.argv[2]== 'estrategia32'):    #32=M
         estrategiaType = 32
-    else: 
+    elif(sys.argv[2]== 'estrategia00'):    #00=J
         estrategiaType = 00 
     
     
@@ -291,7 +291,7 @@ if __name__ == '__main__':
         print('Mercado Europeo')
         telegram_send("EUROPA Estrategia 10: LSTM")
         tickers=  tickers_eurostoxx #+tickers_ibex 
-    elif (sys.argv[1]== 'USA'):
+    elif (sys.argv[1]== 'USA'): 
         print('Mercado Americano sep 2024')
         telegram_send("USA Estrategia: "+str(estrategiaType)+ "  (32=M) LSTM 11/24 #### #### #### #### ")
         tickers=  tickers_sp500 #+tickers_nasdaq #+ tickers_commodity
@@ -323,24 +323,21 @@ if __name__ == '__main__':
             try: 
                 #################### PROBAMOS LA ESTRATEGIA
                 # Determino las fechas, que NO se han visto en training
-                fechaInicio_ = dt.datetime.today()  - dt.timedelta(days=510)
+                fechaInicio_ = dt.datetime.today()  - dt.timedelta(days=450)
                 fechaFin_ = dt.datetime.today()  #- dt.timedelta(days=1)    #dt.datetime(2023,2,21)
                 
                 dfpl = yf.download(instrumento_,  fechaInicio_,fechaFin_ )
                 dfpl.columns = dfpl.columns.droplevel(1)
-                dfpl_reset = dfpl.reset_index(drop=True, inplace=True)
+                #dfpl_reset = dfpl.reset_index(drop=True, inplace=True)   #Esta linea resetea los indices y ahora pone una numerico y me quita la fecha.
             except:
                 logger.warning('[83]Ticker no existe  '+instrumento_)
                 continue
             if dfpl.empty:
                 continue
-            if len(dfpl) <200:
+            if len(dfpl) <150:
                 continue
             ##Ver si tiene pocos datos        
          
-            ########################### UNA prediciones HULL and CLOSE
-            #myLSTMnet_4D_hull = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'hull')          #Creamos la clase
-            #df_signal_hull, predi, prediDesplazado = myLSTMnet_4D_hull.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_)
             
             try: 
                 myLSTMnet_4D_Close = lstm.LSTMClass(dias_a_futuro,Y_supervised_ = 'Close')          #Creamos el objeto de la clase lstm
@@ -352,13 +349,8 @@ if __name__ == '__main__':
             #del pasado cercano fuera del modelo. 
             #Tendria que hacer backtesting con los datos de test y luego guardar los parametros
             
-            try:
-                
-                if (sys.argv[1]== 'RUSSELL'):    #no tengo modelo    
-                    df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, 
-                                                                                                    produccion_=False)
-                else:
-                    df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, 
+            try:                
+                df_signal_Close, predi, prediDesplazado = myLSTMnet_4D_Close.estrategia_LSTM_01( instrumento_, fechaInicio_, fechaFin_, 
                                                                                                     produccion_=True, fullDataSet=False)        
             except:
                 logger.error('Error al cargar trabajar con el modelo LSTM  '+instrumento_)
